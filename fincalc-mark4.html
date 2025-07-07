@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Calculator - Mark 4</title>
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            /* Light mode defaults */
+            --bg-color: #f4f4f4;
+            --container-bg-color: #fff;
+            --text-color: #333;
+            --header-color: #0056b3;
+            --input-border-color: #ddd;
+            --output-bg-color: #e9ecef;
+            --output-text-color: #28a745;
+            --error-color: #dc3545;
+            --table-header-bg: #f2f2f2;
+            --table-row-even-bg: #f9f9f9;
+            --button-primary-bg: #007bff;
+            --button-primary-hover-bg: #0056b3;
+            --button-secondary-bg: #6c757d;
+            --button-secondary-hover-bg: #5a6268;
+            --button-clear-bg: #dc3545;
+            --button-clear-hover-bg: #c82333;
+            --toggle-bg: #ccc;
+            --toggle-handle-bg: #fff;
+        }
+
+        body[data-theme="dark"] {
+            --bg-color: #282c34;
+            --container-bg-color: #3b424d;
+            --text-color: #e0e0e0;
+            --header-color: #61dafb;
+            --input-border-color: #555;
+            --output-bg-color: #4a515c;
+            --output-text-color: #90ee90;
+            --error-color: #ff6b6b;
+            --table-header-bg: #4c545e;
+            --table-row-even-bg: #3f4751;
+            --button-primary-bg: #61dafb;
+            --button-primary-hover-bg: #21a1f1;
+            --button-secondary-bg: #7f8c8d;
+            --button-secondary-hover-bg: #95a5a6;
+            --button-clear-bg: #e74c3c;
+            --button-clear-hover-bg: #c0392b;
+            --toggle-bg: #555;
+            --toggle-handle-bg: #aaa;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s; /* Smooth theme transition */
+        }
+        .container {
+            background-color: var(--container-bg-color);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 750px;
+            margin: auto;
+            box-sizing: border-box;
+            position: relative; /* For toggle positioning */
+        }
+        h1 {
+            text-align: center;
+            color: var(--header-color);
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .input-group label {
+            flex-shrink: 0;
+            width: 140px;
+            font-weight: bold;
+            text-align: left;
+        }
+        .input-group input[type="text"],
+        .input-group input[type="number"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--input-border-color);
+            border-radius: 4px;
+            font-size: 1em;
+            min-width: 150px;
+            background-color: var(--container-bg-color); /* Input background matches container */
+            color: var(--text-color);
+        }
+        .input-group .action-button {
+            padding: 10px 15px;
+            background-color: var(--button-primary-bg);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            box-sizing: border-box;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: 0;
+            transition: background-color 0.2s; /* Smooth hover transition */
+        }
+        .input-group .action-button.calc-button {
+             width: 120px;
+        }
+        .input-group .action-button.conversion-button {
+             background-color: var(--button-secondary-bg);
+             width: 60px;
+        }
+        .input-group .action-button:hover {
+            background-color: var(--button-primary-hover-bg);
+        }
+        .input-group .action-button.conversion-button:hover {
+            background-color: var(--button-secondary-hover-bg);
+        }
+        .output-group {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--output-bg-color);
+            border-radius: 4px;
+            font-size: 1.2em;
+            text-align: center;
+            font-weight: bold;
+            color: var(--output-text-color);
+        }
+        .output-group div {
+            margin-bottom: 5px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .controls button.clear {
+            background-color: var(--button-clear-bg);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+        .controls button.clear:hover {
+            background-color: var(--button-clear-hover-bg);
+        }
+        .error-message {
+            color: var(--error-color);
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* Amortization Table Styles */
+        .amortization-table-container {
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid var(--input-border-color); /* Use general border color */
+            border-radius: 4px;
+            background-color: var(--container-bg-color);
+        }
+        .amortization-table {
+            width: 100%;
+            min-width: 600px;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            text-align: right;
+            color: var(--text-color); /* Table text color */
+        }
+        .amortization-table th, .amortization-table td {
+            padding: 8px;
+            border: 1px solid var(--input-border-color);
+            white-space: nowrap;
+        }
+        .amortization-table th {
+            background-color: var(--table-header-bg);
+            font-weight: bold;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .amortization-table tbody tr:nth-child(even) {
+            background-color: var(--table-row-even-bg);
+        }
+
+        /* Theme Toggle Switch */
+        .theme-switch-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .theme-switch-wrapper span {
+            font-size: 0.9em;
+            color: var(--text-color);
+            white-space: nowrap;
+        }
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 48px;
+        }
+        .theme-switch input {
+            display: none;
+        }
+        .slider {
+            background-color: var(--toggle-bg);
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+        }
+        .slider:before {
+            background-color: var(--toggle-handle-bg);
+            bottom: 2px;
+            content: "";
+            height: 20px;
+            left: 2px;
+            position: absolute;
+            width: 20px;
+            transition: .4s;
+        }
+        input:checked + .slider {
+            background-color: var(--header-color); /* Active toggle background */
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        .slider.round {
+            border-radius: 34px;
+        }
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.5em;
+                margin-top: 40px; /* Make space for the toggle above */
+            }
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+            }
+            .input-group label {
+                width: auto;
+                margin-right: 0;
+                text-align: left;
+                margin-bottom: 5px;
+            }
+            .input-group input[type="text"],
+            .input-group input[type="number"] {
+                width: auto;
+                min-width: unset;
+            }
+            .input-group .action-button {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+            .input-group .action-button.calc-button,
+            .input-group .action-button.conversion-button {
+                width: 100%;
+            }
+            .output-group {
+                font-size: 1em;
+                padding: 10px;
+            }
+            .theme-switch-wrapper {
+                top: 10px;
+                right: 10px;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 5px;
+            }
+            .theme-switch-wrapper span {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="theme-switch-wrapper">
+            <span>Dark Mode</span>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox" onclick="toggleTheme()" />
+                <div class="slider round"></div>
+            </label>
+        </div>
+
+        <h1>Financial Calculator - Mark 4</h1>
+
+        <div class="input-group">
+            <label for="n">n (Periods, e.g., Months)</label>
+            <input type="number" id="n" placeholder="e.g., 360">
+            <button class="action-button conversion-button" onclick="multiplyBy12('n')">n*12</button>
+            <button class="action-button calc-button" onclick="calculate('n')">Calc n</button>
+        </div>
+        <div class="input-group">
+            <label for="i">i (Rate %, e.g., Monthly)</label>
+            <input type="number" id="i" placeholder="e.g., 0.508333 (6.1/12)">
+            <button class="action-button conversion-button" onclick="divideBy12('i')">i/12</button>
+            <button class="action-button calc-button" onclick="calculate('i')">Calc i</button>
+        </div>
+        <div class="input-group">
+            <label for="pv">Pv (Present Value)</label>
+            <input type="text" id="pv" placeholder="e.g., 500,000" inputmode="decimal">
+            <button class="action-button calc-button" onclick="calculate('pv')">Calc Pv</button>
+        </div>
+        <div class="input-group">
+            <label for="pmt">Pmt (Payment)</label>
+            <input type="text" id="pmt" placeholder="e.g., -3,000" inputmode="decimal">
+            <button class="action-button calc-button" onclick="calculate('pmt')">Calc Pmt</button>
+        </div>
+        <div class="input-group">
+            <label for="fv">Fv (Future Value)</label>
+            <input type="text" id="fv" placeholder="e.g., 0" inputmode="decimal">
+            <button class="action-button calc-button" onclick="calculate('fv')">Calc Fv</button>
+        </div>
+
+        <div class="output-group" id="outputResultGroup">
+            Result: <span id="result"></span>
+        </div>
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="controls">
+            <button class="clear" onclick="clearInputs()">Clear All</button>
+        </div>
+
+        <div id="amortizationTableContainer" class="amortization-table-container" style="display: none;">
+            <h2>Repayment Schedule</h2>
+            <table class="amortization-table">
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Beginning Balance</th>
+                        <th>Payment</th>
+                        <th>Interest Paid</th>
+                        <th>Principal Paid</th>
+                        <th>Ending Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="amortizationTableBody">
+                    </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        // Theme toggle logic
+        function toggleTheme() {
+            const body = document.body;
+            const checkbox = document.getElementById('checkbox');
+            if (checkbox.checked) {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load theme on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const checkbox = document.getElementById('checkbox');
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                checkbox.checked = true;
+            } else {
+                document.body.removeAttribute('data-theme');
+                checkbox.checked = false;
+            }
+        });
+
+
+        function getInputValue(id) {
+            const element = document.getElementById(id);
+            if (element.value === '') {
+                return null;
+            }
+            if (id === 'pv' || id === 'pmt' || id === 'fv') {
+                // Ensure commas are removed before parsing
+                return parseFloat(element.value.replace(/,/g, ''));
+            }
+            return parseFloat(element.value);
+        }
+
+        function formatNumberWithCommas(x, decimalPlaces = 2) {
+            if (x === null || isNaN(x)) {
+                return '';
+            }
+            // Use Math.abs for formatting the absolute value, then reapply sign if negative
+            const isNegative = x < 0;
+            let formatted = Number(Math.abs(x)).toFixed(decimalPlaces).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return isNegative ? `(${formatted})` : formatted; // Use parentheses for negative numbers
+        }
+
+        function setOutput(value, label = '', totalRepayments = null, totalInterest = null) {
+            const outputResultGroup = document.getElementById('outputResultGroup');
+            outputResultGroup.innerHTML = 'Result: <span id="result"></span>'; // Reset to initial state
+            const resultElement = document.getElementById('result');
+            const errorMessageElement = document.getElementById('errorMessage');
+
+            if (value === null || isNaN(value)) {
+                resultElement.textContent = 'Error: Invalid calculation';
+                resultElement.style.color = 'var(--error-color)';
+                errorMessageElement.textContent = '';
+                document.getElementById('amortizationTableContainer').style.display = 'none';
+            } else {
+                resultElement.style.color = 'var(--output-text-color)';
+                errorMessageElement.textContent = '';
+
+                if (label.includes('i:')) {
+                    const periodicRate = value;
+                    const annualRate = value * 12;
+                    resultElement.textContent = `i (Periodic %): ${periodicRate.toFixed(6)}`;
+                    const annualLine = document.createElement('div');
+                    annualLine.textContent = `i (Annual %): ${annualRate.toFixed(6)}`;
+                    outputResultGroup.appendChild(annualLine);
+
+                } else if (label.includes('n:')) {
+                    const totalPeriods = value;
+                    const years = value / 12;
+                    resultElement.textContent = `n (Periods): ${totalPeriods.toFixed(4)}`;
+                    const yearsLine = document.createElement('div');
+                    yearsLine.textContent = `n (Years): ${years.toFixed(4)}`;
+                    outputResultGroup.appendChild(yearsLine);
+
+                } else {
+                    let formattedValue = formatNumberWithCommas(value, 2);
+                    resultElement.textContent = `${label}${formattedValue}`;
+                }
+
+                if (totalRepayments !== null && totalInterest !== null) {
+                    const totalRepaymentsLine = document.createElement('div');
+                    totalRepaymentsLine.style.marginTop = '10px';
+                    totalRepaymentsLine.textContent = `Total Loan Repayments: ${formatNumberWithCommas(totalRepayments, 2)}`;
+                    outputResultGroup.appendChild(totalRepaymentsLine);
+
+                    const totalInterestLine = document.createElement('div');
+                    totalInterestLine.textContent = `Total Interest Charged: ${formatNumberWithCommas(totalInterest, 2)}`;
+                    outputResultGroup.appendChild(totalInterestLine);
+                }
+            }
+        }
+
+        function displayError(message) {
+            const errorMessageElement = document.getElementById('errorMessage');
+            const outputResultGroup = document.getElementById('outputResultGroup');
+            outputResultGroup.innerHTML = 'Result: <span id="result"></span>';
+            const resultElement = document.getElementById('result');
+
+            errorMessageElement.textContent = message;
+            resultElement.textContent = '';
+            document.getElementById('amortizationTableContainer').style.display = 'none';
+        }
+
+        function multiplyBy12(id) {
+            const inputElement = document.getElementById(id);
+            let currentValue = parseFloat(inputElement.value);
+            if (!isNaN(currentValue)) {
+                inputElement.value = (currentValue * 12).toFixed(0);
+                displayError('');
+                setOutput('');
+            } else {
+                displayError("Please enter a number to multiply.");
+            }
+        }
+
+        function divideBy12(id) {
+            const inputElement = document.getElementById(id);
+            let currentValue = parseFloat(inputElement.value);
+            if (!isNaN(currentValue)) {
+                inputElement.value = (currentValue / 12).toFixed(6);
+                displayError('');
+                setOutput('');
+            } else {
+                displayError("Please enter a number to divide.");
+            }
+        }
+
+        function generateAmortizationTable(n, i_per_period, pv, pmt) {
+            const tableBody = document.getElementById('amortizationTableBody');
+            tableBody.innerHTML = '';
+            const tableContainer = document.getElementById('amortizationTableContainer');
+            tableContainer.style.display = 'block';
+
+            let beginningBalance = pv;
+            const epsilon = 0.01;
+
+            const maxPeriodsToShow = 1000;
+            const actualPeriods = Math.min(n, maxPeriodsToShow);
+
+            const isLoan = (pv > 0 && pmt < 0);
+            const isSavings = (pv <= 0 && pmt > 0);
+
+            let totalInterestPaid = 0;
+            let totalPrincipalPaid = 0;
+            let totalPaymentsMade = 0;
+            let periodsCompleted = 0;
+
+            for (let period = 1; period <= actualPeriods; period++) {
+                let interestPaid;
+                let principalPaid;
+                let endingBalance;
+                let currentPayment = pmt;
+
+                if (isLoan && beginningBalance > epsilon && period === n) {
+                    interestPaid = -beginningBalance * i_per_period;
+                    principalPaid = -beginningBalance;
+                    currentPayment = interestPaid + principalPaid;
+                    endingBalance = 0;
+                } else if (i_per_period === 0) {
+                    interestPaid = 0;
+                    principalPaid = -currentPayment;
+                    endingBalance = beginningBalance + currentPayment;
+                } else {
+                    interestPaid = -beginningBalance * i_per_period;
+                    principalPaid = currentPayment - interestPaid;
+                    endingBalance = beginningBalance + principalPaid;
+                }
+
+                totalInterestPaid += interestPaid;
+                totalPrincipalPaid += principalPaid;
+                totalPaymentsMade += currentPayment;
+                periodsCompleted = period;
+
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = period;
+                row.insertCell().textContent = formatNumberWithCommas(beginningBalance, 2);
+                row.insertCell().textContent = formatNumberWithCommas(currentPayment, 2);
+                row.insertCell().textContent = formatNumberWithCommas(interestPaid, 2);
+                row.insertCell().textContent = formatNumberWithCommas(principalPaid, 2);
+                row.insertCell().textContent = formatNumberWithCommas(endingBalance, 2);
+
+                beginningBalance = endingBalance;
+
+                if (isLoan && beginningBalance < epsilon && period !== n) {
+                    break;
+                }
+            }
+
+            if (isLoan && periodsCompleted > 0) {
+                const totalRow = tableBody.insertRow();
+                totalRow.style.fontWeight = 'bold';
+                totalRow.insertCell().textContent = 'Totals';
+                totalRow.insertCell().textContent = '';
+                totalRow.insertCell().textContent = formatNumberWithCommas(totalPaymentsMade, 2);
+                totalRow.insertCell().textContent = formatNumberWithCommas(totalInterestPaid, 2);
+                totalRow.insertCell().textContent = formatNumberWithCommas(totalPrincipalPaid, 2);
+                totalRow.insertCell().textContent = formatNumberWithCommas(0, 2);
+            } else if (isSavings && periodsCompleted > 0) {
+                 const finalFv = calculateFV(pv, pmt, n, i_per_period);
+                 const totalRow = tableBody.insertRow();
+                 totalRow.style.fontWeight = 'bold';
+                 totalRow.insertCell().textContent = 'Final';
+                 totalRow.insertCell().textContent = '';
+                 totalRow.insertCell().textContent = formatNumberWithCommas(totalPaymentsMade, 2);
+                 const interestEarned = finalFv - (pv + totalPaymentsMade);
+                 totalRow.insertCell().textContent = formatNumberWithCommas(interestEarned, 2);
+                 totalRow.insertCell().textContent = '';
+                 totalRow.insertCell().textContent = formatNumberWithCommas(finalFv, 2);
+            }
+
+            return { totalRepayments: totalPaymentsMade, totalInterest: totalInterestPaid };
+        }
+
+        function calculateFV(pv, pmt, n, i_per_period) {
+            if (i_per_period === 0) {
+                return pv + pmt * n;
+            }
+            return pv * Math.pow(1 + i_per_period, n) + pmt * ((Math.pow(1 + i_per_period, n) - 1) / i_per_period);
+        }
+
+
+        function calculate(calcFor) {
+            document.getElementById('outputResultGroup').innerHTML = 'Result: <span id="result"></span>';
+            document.getElementById('errorMessage').textContent = '';
+            document.getElementById('amortizationTableContainer').style.display = 'none';
+
+            let n_val = getInputValue('n');
+            let i_val = getInputValue('i');
+            let pv_val = getInputValue('pv');
+            let pmt_val = getInputValue('pmt');
+            let fv_val = getInputValue('fv');
+
+            let i_calc = i_val !== null ? i_val / 100 : null;
+            let n_calc = n_val;
+
+            const inputs = [n_val, i_val, pv_val, pmt_val, fv_val];
+            const missingCount = inputs.filter(val => val === null).length;
+
+            if (missingCount !== 1) {
+                displayError("Please provide exactly four values to calculate the fifth.");
+                return;
+            }
+
+            let result;
+            let tempPv = pv_val;
+            let tempPmt = pmt_val;
+            let tempN = n_val;
+            let tempI = i_calc;
+
+            if (calcFor !== 'i' && i_calc === 0) {
+                 if (n_calc === 0) {
+                     displayError("Cannot calculate with n=0 and i=0 unless it's a direct transfer.");
+                     return;
+                 }
+                 if (calcFor === 'fv') {
+                     result = pv_val + pmt_val * n_calc;
+                 } else if (calcFor === 'pv') {
+                     result = -fv_val - pmt_val * n_calc;
+                     tempPv = result;
+                 } else if (calcFor === 'pmt') {
+                     if (n_calc === 0) {
+                         displayError("Cannot calculate Pmt when n=0 and i=0.");
+                         return;
+                     }
+                     result = (-fv_val - pv_val) / n_calc;
+                     tempPmt = result;
+                 } else if (calcFor === 'n') {
+                     if (pmt_val === 0) {
+                        if (Math.abs(pv_val + fv_val) > 0.0001) {
+                             displayError("Cannot calculate n when Pmt=0 and i=0 unless Pv + Fv is 0.");
+                             return;
+                        }
+                        displayError("Cannot determine 'n' when Pmt=0, i=0, and Pv+Fv=0 (infinite solutions).");
+                        return;
+                     }
+                     result = (-fv_val - pv_val) / pmt_val;
+                     tempN = result;
+                 }
+            } else {
+                switch (calcFor) {
+                    case 'fv':
+                        result = pv_val * Math.pow(1 + i_calc, n_calc) + pmt_val * ((Math.pow(1 + i_calc, n_calc) - 1) / i_calc);
+                        break;
+                    case 'pv':
+                        let annuityFactorPv = (Math.pow(1 + i_calc, n_calc) - 1) / i_calc;
+                        if (Math.pow(1 + i_calc, n_calc) === 0) {
+                            displayError("Cannot calculate Pv. Division by zero likely due to extreme i or n values.");
+                            return;
+                        }
+                        result = (-fv_val - pmt_val * annuityFactorPv) / Math.pow(1 + i_calc, n_calc);
+                        tempPv = result;
+                        break;
+                    case 'pmt':
+                        let annuityFactorPmt = (Math.pow(1 + i_calc, n_calc) - 1) / i_calc;
+                        if (annuityFactorPmt === 0) {
+                            displayError("Cannot calculate Pmt. Division by zero likely due to i or n values.");
+                            return;
+                        }
+                        result = (-fv_val - pv_val * Math.pow(1 + i_calc, n_calc)) / annuityFactorPmt;
+                        tempPmt = result;
+                        break;
+                    case 'n':
+                        if (pmt_val === 0) {
+                            if (pv_val === 0) { displayError("Cannot calculate n with Pv=0 and Pmt=0."); return; }
+                            if (i_calc <= -1) { displayError("Invalid interest rate for n calculation (i <= -100%)."); return; }
+                            if ((-fv_val / pv_val) <= 0) {
+                                displayError("Invalid inputs for n calculation when Pmt=0. Fv and Pv must have opposite signs for a solution.");
+                                return;
+                            }
+                            result = Math.log(-fv_val / pv_val) / Math.log(1 + i_calc);
+                        } else {
+                            let low = 0;
+                            let high = 10000;
+                            let epsilon = 0.0001;
+                            let maxIterations = 1000;
+                            let foundN = false;
+
+                            for (let k = 0; k < maxIterations; k++) {
+                                let currentN = (low + high) / 2;
+                                let f_n;
+                                if (i_calc === 0) {
+                                    f_n = pv_val + pmt_val * currentN + fv_val;
+                                } else {
+                                    f_n = pv_val * Math.pow(1 + i_calc, currentN) + pmt_val * ((Math.pow(1 + i_calc, currentN) - 1) / i_calc) + fv_val;
+                                }
+
+                                if (Math.abs(f_n) < epsilon) {
+                                    result = currentN;
+                                    foundN = true;
+                                    break;
+                                }
+
+                                if (f_n > 0) {
+                                    high = currentN;
+                                } else {
+                                    low = currentN;
+                                }
+
+                                if (k === maxIterations - 1 && !foundN && Math.abs(f_n) > epsilon * 10) {
+                                     displayError("Could not find a precise 'n' within iterations. Check inputs and ensure a solution exists.");
+                                     return;
+                                }
+                            }
+                            if (!foundN) {
+                                displayError("Could not find a precise 'n' within iterations. Check inputs and ensure a solution exists.");
+                                return;
+                            }
+                        }
+                        if (result < 0) {
+                            displayError("Calculated 'n' is negative. Check inputs (e.g., signs of Pv, Pmt, Fv) or if a solution is possible.");
+                            return;
+                        }
+                        tempN = result;
+                        break;
+                    case 'i':
+                        let guess_i = 0.005;
+                        let iterations_i = 1000;
+                        let tolerance_i = 0.00000001;
+
+                        if (pv_val === 0 && pmt_val === 0) {
+                            displayError("Cannot calculate 'i' when Pv=0 and Pmt=0.");
+                            return;
+                        }
+                        if (n_calc <= 0) {
+                            displayError("Periods (n) must be greater than 0 to calculate 'i'.");
+                            return;
+                        }
+
+                        if (pv_val > 0 && pmt_val < 0 && fv_val <= 0) {
+                            if (Math.abs(pmt_val * n_calc) < pv_val) {
+                                guess_i = -0.001;
+                            } else if (Math.abs(pmt_val * n_calc) > pv_val * 2) {
+                                guess_i = 0.01;
+                            } else {
+                                guess_i = 0.005;
+                            }
+                        } else if (pv_val <= 0 && pmt_val > 0 && fv_val >= 0) {
+                            if (pv_val + (pmt_val * n_calc) > fv_val) {
+                                guess_i = -0.001;
+                            } else if (fv_val > (pmt_val * n_calc) * 2 && pv_val === 0) {
+                                guess_i = 0.01;
+                            } else {
+                                guess_i = 0.005;
+                            }
+                        }
+
+
+                        let foundI = false;
+                        for (let k = 0; k < iterations_i; k++) {
+                            let term1 = pv_val * Math.pow(1 + guess_i, n_calc);
+                            let term2;
+                            if (Math.abs(guess_i) < 1e-9) {
+                                term2 = pmt_val * n_calc;
+                            } else {
+                                term2 = pmt_val * ((Math.pow(1 + guess_i, n_calc) - 1) / guess_i);
+                            }
+                            let F_i = term1 + term2 + fv_val;
+
+                            let F_prime_i;
+                            if (Math.abs(guess_i) < 1e-9) {
+                                F_prime_i = pv_val * n_calc + pmt_val * n_calc * (n_calc - 1) / 2;
+                            } else {
+                                F_prime_i = pv_val * n_calc * Math.pow(1 + guess_i, n_calc - 1) +
+                                            pmt_val * (n_calc * Math.pow(1 + guess_i, n_calc - 1) * guess_i - (Math.pow(1 + guess_i, n_calc) - 1)) / (guess_i * guess_i);
+                            }
+
+                            if (Math.abs(F_prime_i) < tolerance_i) {
+                                 if (k < 100) {
+                                    guess_i += 0.0001;
+                                    continue;
+                                 }
+                                 displayError("Cannot calculate 'i'. Derivative too close to zero or bad initial guess. Try adjusting inputs.");
+                                 return;
+                            }
+
+                            let nextGuess = guess_i - F_i / F_prime_i;
+
+                            if (Math.abs(nextGuess - guess_i) < tolerance_i) {
+                                guess_i = nextGuess;
+                                foundI = true;
+                                break;
+                            }
+                            guess_i = nextGuess;
+
+                            if (guess_i <= -0.999999) {
+                                guess_i = -0.999999;
+                                if (Math.abs(F_i) > tolerance_i * 100 && k > 500) {
+                                    displayError("Could not calculate 'i'. Rate suggests greater than -100% or no solution.");
+                                    return;
+                                }
+                            }
+                        }
+                        if (!foundI || isNaN(guess_i) || guess_i <= -0.999999) {
+                             displayError("Could not calculate 'i' within iterations or result is invalid. Check inputs.");
+                             return;
+                        }
+                        result = guess_i * 100;
+                        tempI = result / 100;
+                        break;
+                    default:
+                        displayError("Unknown calculation type.");
+                        return;
+                }
+            }
+
+
+            let finalTotalRepayments = null;
+            let finalTotalInterest = null;
+
+            if (tempN !== null && tempI !== null && tempPv !== null && tempPmt !== null && tempN > 0) {
+                const isLoan = (tempPv > 0 && tempPmt < 0);
+                const isSavings = (tempPv <= 0 && tempPmt > 0);
+
+                if ((isLoan || isSavings) && Math.abs(tempPmt) > 0.001) {
+                     const totals = generateAmortizationTable(tempN, tempI, tempPv, tempPmt);
+                     finalTotalRepayments = totals.totalRepayments;
+                     finalTotalInterest = totals.totalInterest;
+                }
+            }
+
+            let displayLabel = '';
+            switch(calcFor) {
+                case 'fv': displayLabel = 'Fv: '; break;
+                case 'pv': displayLabel = 'Pv: '; break;
+                case 'pmt': displayLabel = 'Pmt: '; break;
+                case 'n': displayLabel = 'n: '; break;
+                case 'i': displayLabel = 'i: '; break;
+            }
+            setOutput(result, displayLabel, finalTotalRepayments, finalTotalInterest);
+        }
+
+        function clearInputs() {
+            document.getElementById('n').value = '';
+            document.getElementById('i').value = '';
+            document.getElementById('pv').value = '';
+            document.getElementById('pmt').value = '';
+            document.getElementById('fv').value = '';
+            document.getElementById('outputResultGroup').innerHTML = 'Result: <span id="result"></span>';
+            document.getElementById('errorMessage').textContent = '';
+            document.getElementById('amortizationTableContainer').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

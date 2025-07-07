@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithm Visualizer</title>
+    <style>
+        /* CSS Variables for Light Mode */
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --controls-bg: #fff;
+            --controls-border: #ccc;
+            --button-bg: #007bff;
+            --button-hover-bg: #0056b3;
+            --button-disabled-bg: #cccccc;
+            --visualization-bg: #222;
+            --visualization-border: #555;
+            --bar-color: #4CAF50; /* Green */
+            --bar-comparing-color: #ffc107; /* Yellow */
+            --bar-swapping-color: #dc3545; /* Red */
+            --bar-sorted-color: #28a745; /* Darker Green */
+            --info-bg: #fff;
+            --info-header-color: #007bff;
+        }
+
+        /* Dark Mode overrides */
+        body.dark-mode {
+            --bg-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --controls-bg: #2a2a4a;
+            --controls-border: #444;
+            --button-bg: #4CAF50;
+            --button-hover-bg: #367c39;
+            --button-disabled-bg: #555;
+            --visualization-bg: #0d0d1a;
+            --visualization-border: #888;
+            --bar-color: #6a05ad; /* Purple */
+            --bar-comparing-color: #ffeb3b; /* Brighter Yellow */
+            --bar-swapping-color: #ff4500; /* Orange-Red */
+            --bar-sorted-color: #00bcd4; /* Cyan */
+            --info-bg: #2a2a4a;
+            --info-header-color: #00bcd4;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .controls {
+            background-color: var(--controls-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
+            max-width: 900px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            border: 1px solid var(--controls-border);
+        }
+        .controls div {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .controls label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+        .controls input[type="range"], .controls select {
+            padding: 8px 12px;
+            border: 1px solid var(--controls-border);
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: var(--bg-color); /* Use general bg for these */
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .controls button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: var(--button-bg);
+            color: white;
+            transition: background-color 0.2s ease;
+            min-width: 120px;
+            height: 40px;
+        }
+        .controls button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        .controls button:disabled {
+            background-color: var(--button-disabled-bg);
+            cursor: not-allowed;
+        }
+        #darkModeToggle {
+            background-color: var(--controls-bg); /* Match controls background */
+            color: var(--text-color); /* Match text color */
+            border: 1px solid var(--controls-border);
+            min-width: unset; /* Remove min-width inherited from other buttons */
+            width: fit-content;
+            padding: 8px 15px;
+            align-self: center; /* Center toggle button */
+            cursor: pointer;
+        }
+        #darkModeToggle:hover {
+            background-color: var(--controls-border);
+        }
+
+        .visualization-container {
+            width: 100%;
+            max-width: 900px;
+            height: 400px;
+            background-color: var(--visualization-bg);
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: flex-end;
+            gap: 1px;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+            border: 2px solid var(--visualization-border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .bar {
+            width: var(--bar-width);
+            background-color: var(--bar-color);
+            margin: 0;
+            transition: height 0.1s ease-in-out, background-color 0.1s ease-in-out;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .bar.comparing {
+            background-color: var(--bar-comparing-color);
+        }
+        .bar.swapping {
+            background-color: var(--bar-swapping-color);
+        }
+        .bar.sorted {
+            background-color: var(--bar-sorted-color);
+        }
+        #algorithmInfo {
+            background-color: var(--info-bg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 900px;
+            width: 100%;
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            border: 1px solid var(--controls-border); /* Match controls border */
+        }
+        #algorithmInfo h3 {
+            margin-top: 0;
+            color: var(--info-header-color);
+            transition: color 0.3s ease;
+        }
+        #algorithmInfo p {
+            margin-bottom: 8px;
+        }
+        #algorithmInfo .complexity {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sorting Algorithm Visualizer</h1>
+
+    <div class="controls">
+        <div>
+            <label for="arraySize">Array Size:</label>
+            <input type="range" id="arraySize" min="10" max="200" value="50">
+            <span id="arraySizeValue">50</span>
+        </div>
+        <div>
+            <label for="animationSpeed">Animation Speed (ms):</label>
+            <input type="range" id="animationSpeed" min="1" max="500" value="10">
+            <span id="animationSpeedValue">10</span>
+        </div>
+        <div>
+            <label for="algorithmSelect">Algorithm:</label>
+            <select id="algorithmSelect">
+                <option value="bubbleSort">Bubble Sort</option>
+                <option value="selectionSort">Selection Sort</option>
+                <option value="insertionSort">Insertion Sort</option>
+                <option value="pancakeSort">Pancake Sort</option>
+                <option value="combSort">Comb Sort</option>
+                <option value="shellSort">Shell Sort</option>
+                <option value="mergeSort">Merge Sort</option>
+                <option value="quickSort">Quick Sort</option>
+                <option value="heapSort">Heap Sort</option>
+                <option value="countingSort">Counting Sort</option>
+                <option value="radixSort">Radix Sort</option>
+                <option value="bucketSort">Bucket Sort</option>
+            </select>
+        </div>
+        <button id="generateBtn">Generate New Array</button>
+        <button id="startBtn">Start Sort</button>
+        <button id="stopBtn" disabled>Stop Sort</button>
+        <button id="darkModeToggle">Toggle Dark Mode</button>
+    </div>
+
+    <div id="algorithmInfo">
+        </div>
+
+    <div class="visualization-container" id="visualizationContainer"></div>
+
+    <script>
+        const arraySizeInput = document.getElementById('arraySize');
+        const arraySizeValueSpan = document.getElementById('arraySizeValue');
+        const animationSpeedInput = document.getElementById('animationSpeed');
+        const animationSpeedValueSpan = document.getElementById('animationSpeedValue');
+        const algorithmSelect = document.getElementById('algorithmSelect');
+        const generateBtn = document.getElementById('generateBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const visualizationContainer = document.getElementById('visualizationContainer');
+        const algorithmInfoDiv = document.getElementById('algorithmInfo');
+        const darkModeToggle = document.getElementById('darkModeToggle'); // Get the new toggle button
+
+        let array = [];
+        let arraySize = parseInt(arraySizeInput.value);
+        let animationSpeed = parseInt(animationSpeedInput.value);
+        let isSorting = false;
+        let animationSteps = [];
+        let currentStepIndex = 0;
+        let animationFrameId = null;
+
+        // Data for algorithm explanations and complexities
+        const algorithmDetails = {
+            bubbleSort: {
+                name: "Bubble Sort",
+                description: "Repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order. Passes through the list are repeated until no swaps are needed, which indicates that the list is sorted.",
+                complexity: {
+                    best: "$O(N)$ (already sorted)",
+                    average: "$O(N^2)$",
+                    worst: "$O(N^2)$"
+                }
+            },
+            selectionSort: {
+                name: "Selection Sort",
+                description: "Divides the list into two parts: a sorted sublist and an unsorted sublist. It repeatedly finds the minimum element from the unsorted sublist and puts it at the end of the sorted sublist.",
+                complexity: {
+                    best: "$O(N^2)$",
+                    average: "$O(N^2)$",
+                    worst: "$O(N^2)$"
+                }
+            },
+            insertionSort: {
+                name: "Insertion Sort",
+                description: "Builds the final sorted array one item at a time. It iterates through the input elements and consumes one input element in each repetition, building up a sorted output list. Each element is inserted into its correct position among the already sorted elements.",
+                complexity: {
+                    best: "$O(N)$ (already sorted)",
+                    average: "$O(N^2)$",
+                    worst: "$O(N^2)$"
+                }
+            },
+            pancakeSort: {
+                name: "Pancake Sort",
+                description: "Sorts an array by repeatedly finding the largest unsorted element, flipping it to the beginning, and then flipping it to its correct sorted position. The only allowed operation is to 'flip' a prefix of the array.",
+                complexity: {
+                    best: "$O(N)$", // Technically can be O(N) for already sorted, but generally similar to average.
+                    average: "$O(N^2)$",
+                    worst: "$O(N^2)$"
+                }
+            },
+            combSort: {
+                name: "Comb Sort",
+                description: "An improvement over Bubble Sort. It eliminates 'turtles' (small values near the end of the list) by using a gap that shrinks by a factor (usually 1.3) rather than 1. This allows elements to move quickly over long distances.",
+                complexity: {
+                    best: "$O(N \log N)$",
+                    average: "$O(N \log N)$", // Empirically, performs closer to N log N
+                    worst: "$O(N^2)$"
+                }
+            },
+            shellSort: {
+                name: "Shell Sort",
+                description: "A generalization of Insertion Sort that allows the exchange of items that are far apart. It sorts elements that are at a certain gap apart, then progressively decreases the gap size until it becomes 1 (at which point it becomes an Insertion Sort).",
+                complexity: {
+                    best: "$O(N \log N)$ (depends on gap sequence)",
+                    average: "$O(N \log^2 N)$ (varies greatly by gap sequence)",
+                    worst: "$O(N^2)$ (depends on gap sequence)"
+                }
+            },
+            mergeSort: {
+                name: "Merge Sort",
+                description: "A 'divide and conquer' algorithm. It repeatedly divides the array into two halves until it gets to arrays of 1 element. Then, it repeatedly merges the two sorted halves to produce new sorted arrays until there is only one sorted array.",
+                complexity: {
+                    best: "$O(N \log N)$",
+                    average: "$O(N \log N)$",
+                    worst: "$O(N \log N)$"
+                }
+            },
+            quickSort: {
+                name: "Quick Sort",
+                description: "Another 'divide and conquer' algorithm. It picks an element as a 'pivot' and partitions the given array around the picked pivot. It then recursively sorts the sub-arrays created by the partition.",
+                complexity: {
+                    best: "$O(N \log N)$",
+                    average: "$O(N \log N)$",
+                    worst: "$O(N^2)$ (occurs with bad pivot choices, e.g., already sorted array)"
+                }
+            },
+            heapSort: {
+                name: "Heap Sort",
+                description: "Uses a binary heap data structure. It first transforms the array into a max-heap. Then, it repeatedly extracts the maximum element from the heap (which is the root), swaps it with the last element, reduces the heap size, and re-heapifies.",
+                complexity: {
+                    best: "$O(N \log N)$",
+                    average: "$O(N \log N)$",
+                    worst: "$O(N \log N)$"
+                }
+            },
+            countingSort: {
+                name: "Counting Sort",
+                description: "A non-comparison sorting algorithm. It counts the frequency of each distinct element in the input array. Then, it uses these counts to determine the position of each element in the sorted output array. Efficient for sorting integers within a specific range.",
+                complexity: {
+                    best: "$O(N + K)$ (K is the range of input values)",
+                    average: "$O(N + K)$",
+                    worst: "$O(N + K)$"
+                }
+            },
+            radixSort: {
+                name: "Radix Sort",
+                description: "A non-comparison sorting algorithm that sorts data by processing individual digits (or bits). It typically uses a stable sorting algorithm (like Counting Sort) as a subroutine to sort elements based on each digit's place, from least significant to most significant.",
+                complexity: {
+                    best: "$O(d(N + K))$ (d = number of digits, K = base of numbers)",
+                    average: "$O(d(N + K))$",
+                    worst: "$O(d(N + K))$"
+                }
+            },
+            bucketSort: {
+                name: "Bucket Sort",
+                description: "A non-comparison sorting algorithm that distributes elements of an array into a number of 'buckets'. Each bucket is then sorted individually (often using another sorting algorithm like Insertion Sort), and then the elements of the buckets are concatenated. Efficient when data is uniformly distributed.",
+                complexity: {
+                    best: "$O(N + K)$ (K = number of buckets, for uniform distribution)",
+                    average: "$O(N + K)$",
+                    worst: "$O(N^2)$ (if all elements fall into one bucket)"
+                }
+            }
+        };
+
+        // Update displayed values for range inputs
+        arraySizeInput.oninput = () => {
+            arraySizeValueSpan.textContent = arraySizeInput.value;
+            arraySize = parseInt(arraySizeInput.value);
+            generateRandomArray();
+        };
+
+        animationSpeedInput.oninput = () => {
+            animationSpeedValueSpan.textContent = animationSpeedInput.value;
+            animationSpeed = parseInt(animationSpeedInput.value);
+        };
+
+        generateBtn.onclick = generateRandomArray;
+        startBtn.onclick = startSort;
+        stopBtn.onclick = stopSort;
+
+        // Event listener for algorithm selection
+        algorithmSelect.onchange = displayAlgorithmInfo;
+
+        // Dark Mode Toggle Logic
+        darkModeToggle.onclick = () => {
+            document.body.classList.toggle('dark-mode');
+            // Save preference to localStorage
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        };
+
+        // Check for saved dark mode preference on load
+        function loadDarkModePreference() {
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+            }
+        }
+
+
+        function generateRandomArray() {
+            if (isSorting) stopSort();
+            array = [];
+            // Max value for counting/radix sort needs to be considered
+            // For now, keep range 20-400 for visualization
+            for (let i = 0; i < arraySize; i++) {
+                array.push(Math.floor(Math.random() * 380) + 20); // Values between 20 and 400 for bar height
+            }
+            drawArray(array);
+            animationSteps = [];
+            currentStepIndex = 0;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function drawArray(arr, comparing = [], swapping = [], sorted = []) {
+            visualizationContainer.innerHTML = '';
+            // Adjust bar width based on container width and number of bars, accounting for gap
+            const totalGapWidth = arr.length > 0 ? (arr.length - 1) * 1 : 0; // 1px gap between bars
+            const barWidth = (visualizationContainer.clientWidth - totalGapWidth) / arr.length;
+            arr.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                bar.style.height = `${value}px`;
+                bar.style.width = `${barWidth}px`;
+                if (comparing.includes(index)) {
+                    bar.classList.add('comparing');
+                }
+                if (swapping.includes(index)) {
+                    bar.classList.add('swapping');
+                }
+                if (sorted.includes(index)) {
+                    bar.classList.add('sorted');
+                }
+                visualizationContainer.appendChild(bar);
+            });
+        }
+
+        function recordStep(arr, comparing = [], swapping = [], sorted = []) {
+            animationSteps.push({
+                array: [...arr],
+                comparing: [...comparing],
+                swapping: [...swapping],
+                sorted: [...sorted]
+            });
+        }
+
+        async function startSort() {
+            if (isSorting) return;
+            isSorting = true;
+            generateBtn.disabled = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            algorithmSelect.disabled = true;
+            arraySizeInput.disabled = true;
+
+            animationSteps = [];
+            currentStepIndex = 0;
+            recordStep(array); // Initial state
+
+            const algorithm = algorithmSelect.value;
+            let arrayCopy = [...array];
+
+            // Execute the chosen algorithm to populate animationSteps
+            switch (algorithm) {
+                case 'bubbleSort':
+                    await bubbleSort(arrayCopy);
+                    break;
+                case 'selectionSort':
+                    await selectionSort(arrayCopy);
+                    break;
+                case 'shellSort':
+                    await shellSort(arrayCopy);
+                    break;
+                case 'heapSort':
+                    await heapSort(arrayCopy);
+                    break;
+                case 'mergeSort':
+                    await mergeSort(arrayCopy, 0, arrayCopy.length - 1);
+                    break;
+                case 'quickSort':
+                    await quickSort(arrayCopy, 0, arrayCopy.length - 1);
+                    break;
+                case 'insertionSort':
+                    await insertionSort(arrayCopy);
+                    break;
+                case 'countingSort':
+                    await countingSort(arrayCopy);
+                    break;
+                case 'radixSort':
+                    await radixSort(arrayCopy);
+                    break;
+                case 'bucketSort':
+                    await bucketSort(arrayCopy);
+                    break;
+                case 'combSort':
+                    await combSort(arrayCopy);
+                    break;
+                case 'pancakeSort':
+                    await pancakeSort(arrayCopy);
+                    break;
+                default:
+                    console.error('Unknown algorithm');
+                    isSorting = false; // Reset if algorithm not found
+                    stopSort(); // Ensure buttons are re-enabled
+                    return;
+            }
+
+            // Ensure the final sorted state is recorded and marked as sorted
+            if(isSorting) { // Only record final state if sorting wasn't stopped prematurely
+                recordStep(arrayCopy, [], [], Array.from({length: arrayCopy.length}, (_, i) => i));
+            }
+
+            // Start playing back the animation steps
+            playAnimation();
+        }
+
+        function playAnimation() {
+            if (!isSorting || currentStepIndex >= animationSteps.length) {
+                stopSort();
+                return;
+            }
+
+            const step = animationSteps[currentStepIndex];
+            drawArray(step.array, step.comparing, step.swapping, step.sorted);
+            currentStepIndex++;
+
+            animationFrameId = setTimeout(() => {
+                requestAnimationFrame(playAnimation);
+            }, animationSpeed);
+        }
+
+        function stopSort() {
+            isSorting = false;
+            clearTimeout(animationFrameId);
+            cancelAnimationFrame(animationFrameId); // Just in case, clear both
+            generateBtn.disabled = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            algorithmSelect.disabled = false;
+            arraySizeInput.disabled = false;
+            // Redraw final state if available, or current state
+            if (animationSteps.length > 0) {
+                const lastStep = animationSteps[animationSteps.length - 1];
+                drawArray(lastStep.array, lastStep.comparing, lastStep.swapping, lastStep.sorted);
+            } else {
+                 drawArray(array); // If sorting was stopped before any steps recorded
+            }
+        }
+
+        function displayAlgorithmInfo() {
+            const selectedAlgorithm = algorithmSelect.value;
+            const details = algorithmDetails[selectedAlgorithm];
+
+            if (details) {
+                algorithmInfoDiv.innerHTML = `
+                    <h3>${details.name}</h3>
+                    <p>${details.description}</p>
+                    <p class="complexity">Time Complexity (N = number of elements, K = range of values/buckets, d = number of digits):</p>
+                    <ul>
+                        <li>Best Case: ${details.complexity.best}</li>
+                        <li>Average Case: ${details.complexity.average}</li>
+                        <li>Worst Case: ${details.complexity.worst}</li>
+                    </ul>
+                `;
+            } else {
+                algorithmInfoDiv.innerHTML = `<p>Select a sorting algorithm to see its details.</p>`;
+            }
+        }
+
+
+        // --- Sorting Algorithms Implementations ---
+
+        // Helper for swaps
+        function swap(arr, i, j) {
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+
+        // Bubble Sort
+        async function bubbleSort(arr) {
+            let n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    if (!isSorting) return;
+                    recordStep(arr, [j, j + 1], [], Array.from({length: i}, (_, k) => n - 1 - k)); // Comparing
+                    if (arr[j] > arr[j + 1]) {
+                        swap(arr, j, j + 1);
+                        recordStep(arr, [], [j, j + 1], Array.from({length: i}, (_, k) => n - 1 - k)); // Swapping
+                    }
+                }
+                recordStep(arr, [], [], Array.from({length: i + 1}, (_, k) => n - 1 - k)); // Mark sorted
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+        // Selection Sort
+        async function selectionSort(arr) {
+            let n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                for (let j = i + 1; j < n; j++) {
+                    if (!isSorting) return;
+                    recordStep(arr, [minIdx, j], [], Array.from({length: i}, (_, k) => k)); // Comparing
+                    if (arr[j] < arr[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+                if (!isSorting) return;
+                if (minIdx !== i) {
+                    swap(arr, i, minIdx);
+                    recordStep(arr, [], [i, minIdx], Array.from({length: i}, (_, k) => k)); // Swapping
+                }
+                recordStep(arr, [], [], Array.from({length: i + 1}, (_, k) => k)); // Mark sorted
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+        // Shell Sort
+        async function shellSort(arr) {
+            let n = arr.length;
+            for (let gap = Math.floor(n / 2); gap > 0; gap = Math.floor(gap / 2)) {
+                for (let i = gap; i < n; i++) {
+                    let temp = arr[i];
+                    let j;
+                    for (j = i; j >= gap && arr[j - gap] > temp; j -= gap) {
+                        if (!isSorting) return;
+                        recordStep(arr, [j - gap, j], [], []); // Comparing
+                        arr[j] = arr[j - gap];
+                        recordStep(arr, [], [j, j - gap], []); // Shifting
+                    }
+                    if (!isSorting) return;
+                    arr[j] = temp;
+                    recordStep(arr, [], [j], []); // Placement
+                }
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+        // Heap Sort
+        async function heapSort(arr) {
+            let n = arr.length;
+
+            async function heapify(arr, n, i, sortedIndices) {
+                let largest = i;
+                let left = 2 * i + 1;
+                let right = 2 * i + 2;
+
+                if (left < n && arr[left] > arr[largest]) {
+                    largest = left;
+                }
+                if (right < n && arr[right] > arr[largest]) {
+                    largest = right;
+                }
+
+                if (largest !== i) {
+                    if (!isSorting) return;
+                    recordStep(arr, [i, largest], [], sortedIndices); // Comparing
+                    swap(arr, i, largest);
+                    recordStep(arr, [], [i, largest], sortedIndices); // Swapping
+                    await heapify(arr, n, largest, sortedIndices);
+                }
+            }
+
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                if (!isSorting) return;
+                await heapify(arr, n, i, []);
+            }
+
+            for (let i = n - 1; i > 0; i--) {
+                if (!isSorting) return;
+                let currentSorted = Array.from({length: n - 1 - i}, (_, k) => i + 1 + k);
+                recordStep(arr, [0, i], [], currentSorted); // Comparing root with last
+                swap(arr, 0, i);
+                currentSorted.unshift(i); // Add the newly sorted element
+                recordStep(arr, [], [0, i], currentSorted); // Swapping
+                await heapify(arr, i, 0, currentSorted);
+                // After heapify, the element at `i` is in its final sorted position
+                if (isSorting) recordStep(arr, [], [], Array.from({length: n - i}, (_, k) => i + k));
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+
+        // Merge Sort
+        async function mergeSort(arr, l, r) {
+            if (!isSorting) return;
+            if (l >= r) {
+                return;
+            }
+
+            const m = l + Math.floor((r - l) / 2);
+            await mergeSort(arr, l, m);
+            await mergeSort(arr, m + 1, r);
+            await merge(arr, l, m, r);
+        }
+
+        async function merge(arr, l, m, r) {
+            if (!isSorting) return;
+            const n1 = m - l + 1;
+            const n2 = r - m;
+
+            let L = new Array(n1);
+            let R = new Array(n2);
+
+            for (let i = 0; i < n1; i++) L[i] = arr[l + i];
+            for (let i = 0; i < n2; i++) R[i] = arr[m + 1 + i];
+
+            let i = 0;
+            let j = 0;
+            let k = l;
+
+            while (i < n1 && j < n2) {
+                if (!isSorting) return;
+                recordStep(arr, [l + i, m + 1 + j], [], []); // Comparing elements from sub-arrays
+                if (L[i] <= R[j]) {
+                    arr[k] = L[i];
+                    i++;
+                } else {
+                    arr[k] = R[j];
+                    j++;
+                }
+                recordStep(arr, [], [k], []); // Placement
+                k++;
+            }
+
+            while (i < n1) {
+                if (!isSorting) return;
+                arr[k] = L[i];
+                recordStep(arr, [], [k], []); // Placement
+                i++;
+                k++;
+            }
+
+            while (j < n2) {
+                if (!isSorting) return;
+                arr[k] = R[j];
+                recordStep(arr, [], [k], []); // Placement
+                j++;
+                k++;
+            }
+        }
+
+        // Quick Sort
+        async function quickSort(arr, low, high) {
+            if (!isSorting) return;
+            if (low < high) {
+                let pi = await partition(arr, low, high);
+                await quickSort(arr, low, pi - 1);
+                await quickSort(arr, pi + 1, high);
+            }
+            if (isSorting) { // Mark elements as sorted after their sub-array is processed
+                for(let i = low; i <= high; i++) {
+                    recordStep(arr, [], [], [i]); // Mark single element as sorted
+                }
+            }
+        }
+
+        async function partition(arr, low, high) {
+            if (!isSorting) return;
+            let pivot = arr[high];
+            let i = (low - 1);
+
+            for (let j = low; j <= high - 1; j++) {
+                if (!isSorting) return;
+                recordStep(arr, [j, high], [], []); // Comparing with pivot
+                if (arr[j] < pivot) {
+                    i++;
+                    swap(arr, i, j);
+                    recordStep(arr, [], [i, j], []); // Swapping if smaller than pivot
+                }
+            }
+            if (!isSorting) return;
+            swap(arr, i + 1, high);
+            recordStep(arr, [], [i + 1, high], []); // Placing pivot
+            return (i + 1);
+        }
+
+        // --- New Algorithms ---
+
+        // Insertion Sort
+        async function insertionSort(arr) {
+            let n = arr.length;
+            for (let i = 1; i < n; i++) {
+                let current = arr[i];
+                let j = i - 1;
+                while (j >= 0 && arr[j] > current) {
+                    if (!isSorting) return;
+                    recordStep(arr, [j, j + 1], [], Array.from({length: i}, (_, k) => k)); // Comparing
+                    arr[j + 1] = arr[j];
+                    recordStep(arr, [], [j + 1, j], []); // Shifting
+                    j--;
+                }
+                if (!isSorting) return;
+                arr[j + 1] = current;
+                recordStep(arr, [], [j + 1], Array.from({length: i + 1}, (_, k) => k)); // Placing
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+        // Counting Sort (Requires specific value range)
+        async function countingSort(arr) {
+            let n = arr.length;
+            if (n === 0) return;
+
+            let maxVal = Math.max(...arr);
+            let minVal = Math.min(...arr);
+
+            // Adjust for negative numbers or large min/max
+            const range = maxVal - minVal + 1;
+            const offset = minVal;
+
+            let count = new Array(range).fill(0);
+            let output = new Array(n);
+
+            // Populate count array
+            for (let i = 0; i < n; i++) {
+                if (!isSorting) return;
+                count[arr[i] - offset]++;
+                recordStep(arr, [i], [], []); // Highlighting current element
+            }
+
+            // Modify count array to store actual position
+            for (let i = 1; i < range; i++) {
+                count[i] += count[i - 1];
+            }
+
+            // Build output array
+            for (let i = n - 1; i >= 0; i--) {
+                if (!isSorting) return;
+                output[count[arr[i] - offset] - 1] = arr[i];
+                recordStep(arr, [i], [count[arr[i] - offset] - 1], []); // Show placement
+                count[arr[i] - offset]--;
+            }
+
+            // Copy output to original array
+            for (let i = 0; i < n; i++) {
+                if (!isSorting) return;
+                arr[i] = output[i];
+                recordStep(arr, [], [], Array.from({length: i + 1}, (_, k) => k)); // Mark as sorted
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+        // Radix Sort (LSD) - Uses Counting Sort as a subroutine
+        async function radixSort(arr) {
+            let n = arr.length;
+            if (n === 0) return;
+
+            let maxVal = Math.max(...arr);
+
+            // Perform counting sort for every digit place
+            let exp = 1; // Current digit place (1s, 10s, 100s, ...)
+            while (Math.floor(maxVal / exp) > 0) {
+                if (!isSorting) return;
+                await countingSortByDigit(arr, exp);
+                exp *= 10;
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+
+        }
+
+        async function countingSortByDigit(arr, exp) {
+            let n = arr.length;
+            let output = new Array(n).fill(0);
+            let count = new Array(10).fill(0); // For digits 0-9
+
+            // Store count of occurrences in count[]
+            for (let i = 0; i < n; i++) {
+                if (!isSorting) return;
+                let digit = Math.floor(arr[i] / exp) % 10;
+                count[digit]++;
+                recordStep(arr, [i], [], []); // Highlight element being processed
+            }
+
+            // Change count[i] so that count[i] now contains actual position of this digit in output[]
+            for (let i = 1; i < 10; i++) {
+                count[i] += count[i - 1];
+            }
+
+            // Build the output array
+            for (let i = n - 1; i >= 0; i--) {
+                if (!isSorting) return;
+                let digit = Math.floor(arr[i] / exp) % 10;
+                output[count[digit] - 1] = arr[i];
+                recordStep(arr, [i], [count[digit] - 1], []); // Show placement
+                count[digit]--;
+            }
+
+            // Copy the output array to arr[], so that arr[] now contains sorted numbers according to current digit
+            for (let i = 0; i < n; i++) {
+                if (!isSorting) return;
+                arr[i] = output[i];
+                recordStep(arr, [], [], []); // Show intermediate sorted state
+            }
+        }
+
+
+        // Bucket Sort
+        async function bucketSort(arr) {
+            let n = arr.length;
+            if (n === 0) return;
+
+            let maxVal = Math.max(...arr);
+            let minVal = Math.min(...arr);
+            let bucketCount = Math.floor(Math.sqrt(n)) || 1; // Example bucket count
+            let buckets = Array.from({ length: bucketCount }, () => []);
+
+            // Handle case where maxVal === minVal to prevent division by zero
+            const range = maxVal === minVal ? 1 : maxVal - minVal + 1;
+
+            // Distribute elements into buckets
+            for (let i = 0; i < n; i++) {
+                if (!isSorting) return;
+                let bucketIndex = Math.floor(((arr[i] - minVal) / range) * bucketCount);
+                if (bucketIndex < 0) bucketIndex = 0; // Ensure index is not negative
+                if (bucketIndex >= bucketCount) bucketIndex = bucketCount - 1; // Ensure index is within bounds
+                buckets[bucketIndex].push(arr[i]);
+                recordStep(arr, [i], [], []); // Indicate element being placed into bucket
+            }
+
+            // Sort each bucket and concatenate
+            let k = 0;
+            for (let i = 0; i < bucketCount; i++) {
+                if (!isSorting) return;
+                // Sort individual bucket (using Insertion Sort for simplicity)
+                buckets[i].sort((a, b) => a - b);
+                for (let j = 0; j < buckets[i].length; j++) {
+                    arr[k] = buckets[i][j];
+                    if (!isSorting) return;
+                    recordStep(arr, [], [k], Array.from({length: k + 1}, (_, x) => x)); // Show element being placed and sorted portion
+                    k++;
+                }
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+
+        // Comb Sort
+        async function combSort(arr) {
+            let n = arr.length;
+            let gap = n;
+            let swapped = true;
+            const shrink = 1.3;
+
+            while (gap > 1 || swapped) {
+                if (!isSorting) return;
+                gap = Math.floor(gap / shrink);
+                if (gap < 1) gap = 1;
+                swapped = false;
+
+                for (let i = 0; i < n - gap; i++) {
+                    if (!isSorting) return;
+                    recordStep(arr, [i, i + gap], [], []); // Comparing
+                    if (arr[i] > arr[i + gap]) {
+                        swap(arr, i, i + gap);
+                        recordStep(arr, [], [i, i + gap], []); // Swapping
+                        swapped = true;
+                    }
+                }
+                if (gap === 1 && !swapped && isSorting) { // If gap is 1 and no swaps, it's sorted
+                    recordStep(arr, [], [], Array.from({length: n}, (_, k) => k));
+                }
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+        // Pancake Sort
+        async function pancakeSort(arr) {
+            let n = arr.length;
+
+            async function findMax(arr, k, sortedIndices) {
+                let maxIdx = 0;
+                for (let i = 0; i < k; i++) {
+                    if (!isSorting) return -1; // Return a value indicating stop
+                    recordStep(arr, [maxIdx, i], [], sortedIndices); // Comparing
+                    if (arr[i] > arr[maxIdx]) {
+                        maxIdx = i;
+                    }
+                }
+                return maxIdx;
+            }
+
+            async function flip(arr, k, sortedIndices) {
+                let start = 0;
+                while (start < k) {
+                    if (!isSorting) return;
+                    recordStep(arr, [start, k], [], sortedIndices); // Indicating flip operation
+                    swap(arr, start, k);
+                    recordStep(arr, [], [start, k], sortedIndices); // Showing swap
+                    start++;
+                    k--;
+                }
+            }
+
+            for (let currSize = n; currSize > 1; currSize--) {
+                if (!isSorting) return;
+                let currentSortedIndices = Array.from({length: n - currSize}, (_, k) => currSize + k);
+
+                let maxIdx = await findMax(arr, currSize, currentSortedIndices);
+                if (!isSorting) return;
+                if (maxIdx === -1) return; // Stop if sorting was cancelled during findMax
+
+                if (maxIdx !== currSize - 1) {
+                    // Move max to the beginning
+                    if (maxIdx !== 0) {
+                        await flip(arr, maxIdx, currentSortedIndices);
+                        if (!isSorting) return;
+                    }
+                    // Move max to its correct position (end of current unsorted part)
+                    await flip(arr, currSize - 1, currentSortedIndices);
+                    if (!isSorting) return;
+                }
+                recordStep(arr, [], [], Array.from({length: n - currSize + 1}, (_, k) => currSize - 1 + k)); // Mark sorted
+            }
+            if (isSorting) recordStep(arr, [], [], Array.from({length: n}, (_, k) => k)); // All sorted
+        }
+
+
+        // Initialize on load
+        loadDarkModePreference(); // Load dark mode setting first
+        generateRandomArray();
+        displayAlgorithmInfo(); // Display info for the initially selected algorithm
+
+    </script>
+</body>
+</html>

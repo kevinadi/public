@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Neural Network (Multi-Use Case) - Mark 3.2 Graphical</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script> 
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 1300px; /* Increased width to accommodate larger SVG */
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        input[type="number"], input[type="range"], select {
+            margin-right: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        label {
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .output-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85em;
+            color: #555;
+            max-height: 400px; /* Limit height for output */
+            overflow-y: auto; /* Enable scrolling for output */
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .results-table th, .results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .results-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .good-prediction {
+            color: green;
+            font-weight: bold;
+        }
+        .bad-prediction {
+            color: red;
+            font-weight: bold;
+        }
+
+        /* D3.js specific styling */
+        #networkGraph {
+            background-color: #fcfcfc;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .node circle {
+            fill: #61b15a; /* Neuron color */
+            stroke: #3c8d37;
+            stroke-width: 1.5px;
+        }
+        .node text {
+            font-family: sans-serif;
+            font-size: 9px; /* Slightly smaller text for neuron index */
+            text-anchor: middle;
+            fill: #333;
+        }
+        .link {
+            stroke-opacity: 0.8;
+            stroke-linecap: round;
+        }
+        .link.positive {
+            stroke: steelblue;
+        }
+        .link.negative {
+            stroke: #d62728; /* Red for negative weights */
+        }
+        .layer-label {
+            font-size: 13px; /* Slightly smaller layer labels */
+            font-weight: bold;
+            fill: #555;
+            text-anchor: middle;
+        }
+        .feature-labels text, .output-labels text {
+            font-size: 10px; /* Slightly smaller feature/output labels */
+            fill: #666;
+        }
+        #networkGraphContainer {
+            width: 100%; /* Or a fixed width, e.g., 800px */
+            height: 600px; /* Or a fixed height, e.g., 400px */
+            overflow: scroll; /* Enables both horizontal and vertical scrolling */
+            /* overflow: auto; /* Alternatively, use 'auto' which only shows scrollbars when content overflows */
+            border: 1px solid #ccc; /* Optional: for visual clarity of the scrollable area */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            position: relative; /* Needed if you have absolutely positioned elements inside */
+        }
+
+        /* Ensure the SVG inside does not constrain itself to the container's size if it needs to be larger */
+        #networkGraph {
+            /* The width and height attributes on the SVG itself define its intrinsic size. */
+            /* You might want to remove width/height from here if you want it to be 100% of the container */
+            /* but in this case, keeping them large allows the SVG content to overflow the container */
+            width: 1200px; /* Keep the original large width for the SVG content */
+            height: 500px; /* Keep the original large height for the SVG content */
+            display: block; /* Removes extra space below the SVG */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Deep Neural Network Demonstration (Multi-Use Case)</h1>
+        <p>This page demonstrates a Deep Neural Network (DNN) capable of solving different classification problems.</p>
+        <p>Select a use case below and observe how the network adapts.</p>
+
+        <div class="section">
+            <h2>Select Use Case</h2>
+            <div>
+                <label for="useCaseSelector">Choose Example:</label>
+                <select id="useCaseSelector">
+                    <option value="xor">XOR Problem</option>
+                    <option value="iris" selected>Iris Flower Classification</option>
+                </select>
+            </div>
+            <div id="networkArchitecture" style="margin-top: 15px;">
+                </div>
+        </div>
+
+        <div class="section">
+            <h2>Training Controls</h2>
+            <div>
+                <label for="epochs">Epochs:</label>
+                <input type="number" id="epochs" value="50000" min="1000" step="1000">
+                <label for="learningRate">Learning Rate:</label>
+                <input type="number" id="learningRate" value="0.05" min="0.001" max="1.0" step="0.001">
+            </div>
+            <button id="trainButton">Train Network</button>
+            <button id="resetButton">Reset Network</button>
+            <p id="trainingStatus">Status: Ready to train</p>
+            <div class="output-box" id="trainingOutput">
+                </div>
+        </div>
+
+        <div class="section">
+            <h2>Network Visualization (Graphical)</h2>
+            <p>This graph shows the network's structure, with line thickness representing weight magnitude and color representing positive (blue) or negative (red) weights.</p>
+            <div id="networkGraphContainer">
+                <svg id="networkGraph" width="1200" height="500"></svg>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Test Results</h2>
+            <p id="testResultsDescription">Predictions on the selected use case:</p>
+            <table class="results-table">
+                <thead>
+                    <tr id="testResultsHeader">
+                        </tr>
+                </thead>
+                <tbody id="testResultsBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- Core Neural Network Logic (JavaScript Conversion) ---
+
+        // 1. Activation Functions
+        function sigmoid(x) {
+            if (x > 700) return 1.0;
+            if (x < -700) return 0.0;
+            return 1 / (1 + Math.exp(-x));
+        }
+
+        function sigmoidDerivative(x) {
+            const s = sigmoid(x);
+            return s * (1 - s);
+        }
+
+        // Helper functions for matrix/vector operations
+        function matrixMultiply(matrixA, matrixB) {
+            if (!matrixA || matrixA.length === 0 || !matrixA[0] || !matrixB) {
+                return [];
+            }
+
+            const rowsA = matrixA.length;
+            const colsA = matrixA[0].length;
+
+            let matrixBAsMatrix;
+            let rowsB, colsB;
+
+            if (!Array.isArray(matrixB[0])) { // It's a vector
+                rowsB = matrixB.length;
+                colsB = 1;
+                matrixBAsMatrix = matrixB.map(x => [x]); // Convert to column matrix
+            } else { // It's already a matrix
+                rowsB = matrixB.length;
+                colsB = matrixB[0].length;
+                matrixBAsMatrix = matrixB;
+            }
+
+            if (colsA !== rowsB) {
+                return [];
+            }
+
+            const result = Array(rowsA).fill(0).map(() => Array(colsB).fill(0));
+
+            for (let i = 0; i < rowsA; i++) {
+                for (let j = 0; j < colsB; j++) {
+                    for (let k = 0; k < colsA; k++) {
+                        result[i][j] += matrixA[i][k] * matrixBAsMatrix[k][j];
+                    }
+                }
+            }
+            return result;
+        }
+
+        function transpose(matrix) {
+            if (!matrix || matrix.length === 0 || matrix[0].length === 0) {
+                return matrix;
+            }
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+            const transposed = Array(cols).fill(0).map(() => Array(rows).fill(0));
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    transposed[j][i] = matrix[i][j];
+                }
+            }
+            return transposed;
+        }
+
+        class DeepNeuralNetwork {
+            constructor(layerSizes) {
+                this.layerSizes = layerSizes;
+                this.numLayers = layerSizes.length;
+                this.weights = [];
+                this.biases = [];
+
+                if (!Array.isArray(layerSizes) || layerSizes.length < 2) {
+                    console.error("Invalid layerSizes provided to DeepNeuralNetwork constructor:", layerSizes);
+                    this.layerSizes = [1, 1]; 
+                    this.numLayers = 2;
+                }
+
+                for (let i = 0; i < this.numLayers - 1; i++) {
+                    const currentLayerSize = this.layerSizes[i];
+                    const nextLayerSize = this.layerSizes[i+1];
+
+                    if (currentLayerSize <= 0 || nextLayerSize <= 0) {
+                        console.warn(`Skipping layer initialization for layer ${i} due to zero or negative size.`);
+                        this.weights.push([]); 
+                        this.biases.push([]);
+                        continue;
+                    }
+
+                    const weightsMatrix = [];
+                    const limit = Math.sqrt(6 / (currentLayerSize + nextLayerSize)); 
+                    for (let j = 0; j < nextLayerSize; j++) { 
+                        const row = [];
+                        for (let k = 0; k < currentLayerSize; k++) { 
+                            row.push(Math.random() * 2 * limit - limit); 
+                        }
+                        weightsMatrix.push(row);
+                    }
+                    this.weights.push(weightsMatrix);
+
+                    const biasesVector = Array(nextLayerSize).fill(0.0);
+                    this.biases.push(biasesVector);
+                }
+            }
+
+            forward(inputs) {
+                if (!inputs || inputs.length === 0) {
+                    return { output: [], activations: [], weightedSums: [] };
+                }
+
+                let currentActivation = inputs.map(x => [x]); 
+
+                const activations = [currentActivation];
+                const weightedSums = [null]; 
+
+                for (let i = 0; i < this.numLayers - 1; i++) {
+                    if (!this.weights[i] || !this.biases[i]) {
+                        break; 
+                    }
+
+                    const z = matrixMultiply(this.weights[i], currentActivation.map(row => row[0])); 
+                    
+                    for (let k = 0; k < z.length; k++) {
+                        z[k][0] += this.biases[i][k];
+                    }
+                    
+                    weightedSums.push(z);
+
+                    const a = z.map(val => [sigmoid(val[0])]);
+                    currentActivation = a;
+                    activations.push(currentActivation);
+                }
+                
+                const finalOutput = activations[activations.length - 1]?.map(val => val[0]) || [];
+                return { output: finalOutput, activations: activations, weightedSums: weightedSums };
+            }
+
+            async train(trainingData, epochs, learningRate, outputElem, statusElem) {
+                if (!trainingData || trainingData.length === 0) {
+                    statusElem.textContent = "Status: No training data provided.";
+                    return;
+                }
+                statusElem.textContent = "Status: Training in progress...";
+                let logBuffer = [];
+                const logInterval = 5000; 
+
+                for (let epoch = 0; epoch <= epochs; epoch++) { 
+                    if (epoch % logInterval === 0 || epoch === epochs) { 
+                        let totalLoss = 0;
+                        for (const [inputs, targets] of trainingData) {
+                            const { output } = this.forward(inputs);
+                            totalLoss += this._meanSquaredError(output, targets);
+                        }
+                        const avgLoss = totalLoss / trainingData.length;
+                        logBuffer.push(`Epoch ${epoch}/${epochs}, Loss: ${avgLoss.toFixed(6)}`);
+                        if (logBuffer.length > 20) logBuffer.shift(); 
+                        outputElem.textContent = logBuffer.join('\n');
+                        outputElem.scrollTop = outputElem.scrollHeight; 
+                        
+                        if (this.numLayers > 1) { 
+                             displayNetworkVisualization();
+                        }
+
+                        if (epoch < epochs) { 
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+                    }
+
+                    if (epoch === epochs) break; 
+
+                    for (let i = trainingData.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [trainingData[i], trainingData[j]] = [trainingData[j], trainingData[i]];
+                    }
+
+                    for (const [inputs, targets] of trainingData) {
+                        const { output, activations, weightedSums } = this.forward(inputs);
+                        const targetsCol = targets.map(t => [t]);
+
+                        const deltas = Array(this.numLayers).fill(null);
+
+                        const outputLayerWeightedSum = weightedSums[weightedSums.length - 1]; 
+                        const outputLayerActivation = activations[activations.length - 1]; 
+
+                        if (!outputLayerWeightedSum || !outputLayerActivation) {
+                            continue;
+                        }
+
+                        const deltaOutput = [];
+                        for (let i = 0; i < outputLayerActivation.length; i++) {
+                            const errorTerm = (outputLayerActivation[i]?.[0] - targetsCol[i]?.[0]);
+                            const derivTerm = sigmoidDerivative(outputLayerWeightedSum[i]?.[0]);
+                            deltaOutput.push([errorTerm * derivTerm]);
+                        }
+                        deltas[this.numLayers - 1] = deltaOutput;
+
+                        for (let l = this.numLayers - 2; l > 0; l--) { 
+                            if (!this.weights[l] || !deltas[l + 1] || !weightedSums[l]) {
+                                continue;
+                            }
+                            const weightsNextLayerTransposed = transpose(this.weights[l]); 
+                            const deltaNextLayer = deltas[l + 1]; 
+                            
+                            const weightedErrorSum = matrixMultiply(weightsNextLayerTransposed, deltaNextLayer);
+                            const currentLayerWeightedSum = weightedSums[l]; 
+                            
+                            const deltaCurrentLayer = [];
+                            for (let i = 0; i < weightedErrorSum.length; i++) {
+                                const errorComponent = weightedErrorSum[i]?.[0];
+                                const derivComponent = sigmoidDerivative(currentLayerWeightedSum[i]?.[0]);
+                                deltaCurrentLayer.push([errorComponent * derivComponent]);
+                            }
+                            deltas[l] = deltaCurrentLayer;
+                        }
+
+                        for (let l = 0; l < this.numLayers - 1; l++) {
+                            if (!activations[l] || !deltas[l + 1] || !this.weights[l] || !this.biases[l]) {
+                                continue;
+                            }
+                            const activationCurrentLayerT = transpose(activations[l]);
+                            const deltaCurrent = deltas[l + 1];
+
+                            const dW = matrixMultiply(deltaCurrent, activationCurrentLayerT);
+                            
+                            if (dW.length === 0 || dW[0].length === 0) { 
+                                continue;
+                            }
+
+                            for (let r = 0; r < this.weights[l].length; r++) {
+                                for (let c = 0; c < this.weights[l][r].length; c++) {
+                                    this.weights[l][r][c] -= learningRate * dW[r][c];
+                                }
+                            }
+
+                            for (let r = 0; r < this.biases[l].length; r++) {
+                                this.biases[l][r] -= learningRate * deltaCurrent[r]?.[0];
+                            }
+                        }
+                    }
+                }
+                statusElem.textContent = "Status: Training complete!";
+            }
+
+            _meanSquaredError(predictions, targets) {
+                if (!predictions || !targets || predictions.length !== targets.length) {
+                    return 0; 
+                }
+                let mse = 0;
+                for (let i = 0; i < predictions.length; i++) {
+                    mse += (predictions[i] - targets[i]) ** 2;
+                }
+                return mse / predictions.length;
+            }
+
+            predict(inputs) {
+                const { output } = this.forward(inputs);
+                if (output.length === 0) {
+                    return null; 
+                }
+                if (output.length === 1) {
+                    return output[0];
+                }
+                const maxOutput = Math.max(...output);
+                return output.indexOf(maxOutput); 
+            }
+        }
+
+        // --- D3.js Network Visualization Function ---
+        function drawNetworkGraph(network, layerLabels, inputFeatureLabels, outputClassLabels) {
+            const svg = d3.select("#networkGraph");
+            const width = +svg.attr("width");
+            const height = +svg.attr("height");
+
+            svg.selectAll("*").remove(); // Clear previous drawing
+
+            if (!network || !Array.isArray(network.layerSizes) || network.layerSizes.length < 1) {
+                console.warn("Invalid network object or layerSizes provided for drawing.");
+                return;
+            }
+
+            const layerSizes = network.layerSizes;
+            const numLayers = network.numLayers;
+
+            const hasLinks = numLayers >= 2;
+
+            // Adjusted margins and neuronRadius for smaller visualization
+            const margin = { top: 40, right: 25, bottom: 25, left: 90 }; // Reduced top/bottom/right, slightly less left for labels
+            const effectiveWidth = width - margin.left - margin.right;
+            const effectiveHeight = height - margin.top - margin.bottom;
+
+            const layerSpacing = hasLinks ? effectiveWidth / (numLayers - 1) : effectiveWidth / 2;
+            const neuronRadius = 9; // Reduced neuron size
+            const maxLineThickness = 7; // Slightly reduced max line thickness
+            
+            let allWeights = [];
+            if (hasLinks && network.weights && network.weights.length > 0) {
+                network.weights.forEach(layerWeights => {
+                    if (Array.isArray(layerWeights)) {
+                        layerWeights.forEach(neuronWeightsArray => { 
+                            if (Array.isArray(neuronWeightsArray)) {
+                                allWeights = allWeights.concat(neuronWeightsArray);
+                            }
+                        });
+                    }
+                });
+            }
+            const maxWeight = d3.max(allWeights.map(Math.abs)) || 0.1; 
+
+            const weightScale = d3.scaleLinear()
+                                .domain([0, maxWeight]) 
+                                .range([0.5, maxLineThickness]);
+
+            const colorScale = d3.scaleLinear()
+                                 .domain([-maxWeight, 0, maxWeight])
+                                 .range(["#d62728", "#aaaaaa", "steelblue"]); 
+
+            const nodes = [];
+            const links = [];
+
+            layerSizes.forEach((size, layerIndex) => {
+                if (size <= 0) { 
+                    return;
+                }
+                const x = margin.left + layerIndex * layerSpacing;
+                // Adjust neuronSpacing calculation to consider smaller radius / tighter packing
+                // Using max(size, 1) to prevent division by zero if layer has 0 neurons (already handled by size <= 0)
+                const neuronSpacing = effectiveHeight / (Math.max(size, 1) + 1); 
+                for (let i = 0; i < size; i++) {
+                    const y = margin.top + (i + 1) * neuronSpacing;
+                    nodes.push({
+                        id: `n-${layerIndex}-${i}`,
+                        layer: layerIndex,
+                        index: i,
+                        x: x,
+                        y: y
+                    });
+                }
+            });
+
+            if (hasLinks && network.weights.length > 0) {
+                for (let l = 0; l < numLayers - 1; l++) {
+                    const currentLayerNodes = nodes.filter(n => n.layer === l);
+                    const nextLayerNodes = nodes.filter(n => n.layer === l + 1);
+
+                    if (network.weights[l] && currentLayerNodes.length > 0 && nextLayerNodes.length > 0) {
+                        network.weights[l].forEach((weightsRow, nextNeuronIndex) => { 
+                            if (Array.isArray(weightsRow)) { 
+                                weightsRow.forEach((weight, currentNeuronIndex) => {
+                                    if (currentLayerNodes[currentNeuronIndex] && nextLayerNodes[nextNeuronIndex]) {
+                                        links.push({
+                                            source: currentLayerNodes[currentNeuronIndex],
+                                            target: nextLayerNodes[nextNeuronIndex],
+                                            weight: weight
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+
+            svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(links) 
+                .join("line")
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y)
+                .attr("class", d => `link ${d.weight > 0 ? 'positive' : 'negative'}`)
+                .attr("stroke-width", d => weightScale(Math.abs(d.weight)))
+                .attr("stroke", d => colorScale(d.weight))
+                .append("title") 
+                .text(d => `Weight: ${d.weight.toFixed(4)}`);
+
+            const nodeGroup = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(nodes) 
+                .join("g")
+                .attr("class", "node")
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            nodeGroup.append("circle")
+                .attr("r", neuronRadius);
+            
+            nodeGroup.append("text")
+                .attr("dy", "0.35em")
+                .text(d => d.index); 
+
+            svg.append("g")
+                .attr("class", "layer-labels")
+                .selectAll("text")
+                .data(Array.isArray(layerLabels) ? layerLabels : []) 
+                .join("text")
+                .attr("x", (d, i) => margin.left + i * layerSpacing)
+                .attr("y", margin.top - 15) /* Slightly closer to nodes */
+                .text(d => d)
+                .attr("class", "layer-label");
+
+            if (Array.isArray(inputFeatureLabels) && inputFeatureLabels.length > 0) {
+                const inputNodes = nodes.filter(n => n.layer === 0);
+                if (inputNodes.length > 0) {
+                    svg.append("g")
+                        .attr("class", "feature-labels")
+                        .selectAll("text")
+                        .data(inputFeatureLabels)
+                        .join("text")
+                        .attr("x", inputNodes[0].x - neuronRadius - 8) /* Closer to node */
+                        .attr("y", (d, i) => inputNodes[i]?.y || 0) 
+                        .attr("dy", "0.35em")
+                        .attr("text-anchor", "end")
+                        .text(d => d);
+                }
+            }
+
+            if (Array.isArray(outputClassLabels) && outputClassLabels.length > 0) {
+                const outputNodes = nodes.filter(n => n.layer === numLayers - 1);
+                if (outputNodes.length > 0) {
+                    svg.append("g")
+                        .attr("class", "output-labels")
+                        .selectAll("text")
+                        .data(outputClassLabels)
+                        .join("text")
+                        .attr("x", outputNodes[0].x + neuronRadius + 8) /* Closer to node */
+                        .attr("y", (d, i) => outputNodes[i]?.y || 0) 
+                        .attr("dy", "0.35em")
+                        .attr("text-anchor", "start")
+                        .text(d => d);
+                }
+            }
+        }
+
+        // --- Data Definitions ---
+
+        // XOR Data
+        const xor_config = {
+            layer_structure: [2, 4, 3, 1], // 2 inputs, 1 output
+            training_data: [
+                [[0, 0], [0]],
+                [[0, 1], [1]],
+                [[1, 0], [1]],
+                [[1, 1], [0]]
+            ],
+            test_cases: [
+                [[0, 0], 0],
+                [[0, 1], 1],
+                [[1, 0], 1],
+                [[1, 1], 0]
+            ],
+            epochs: 20000,
+            learningRate: 0.1,
+            architecture_description: `
+                <p><strong>Input Layer:</strong> 2 neurons (for the two XOR inputs)</p>
+                <p><strong>Hidden Layer 1:</strong> <span id="hidden1Size">4</span> neurons</p>
+                <p><strong>Hidden Layer 2:</strong> <span id="hidden2Size">3</span> neurons</p>
+                <p><strong>Output Layer:</strong> 1 neuron (for the XOR output)</p>
+            `,
+            get_test_table_headers: () => `
+                <th>Input</th>
+                <th>Expected Output</th>
+                <th>Predicted Probability</th>
+                <th>Binary Prediction (&gt;= 0.5)</th>
+                <th>Status</th>
+            `,
+            get_test_row: (inputs, true_output, prediction_output, is_correct) => {
+                const binary_prediction = (prediction_output >= 0.5) ? 1 : 0;
+                const statusClass = is_correct ? 'good-prediction' : 'bad-prediction';
+                return `
+                    <td>[${inputs.join(', ')}]</td>
+                    <td>${true_output}</td>
+                    <td>${prediction_output.toFixed(4)}</td>
+                    <td>${binary_prediction}</td>
+                    <td class="${statusClass}">${is_correct ? 'Correct' : 'Incorrect'}</td>
+                `;
+            },
+            get_layer_labels: (layerSizes) => {
+                if (!Array.isArray(layerSizes) || layerSizes.length < 1) return [];
+                const labels = [`Input (${layerSizes[0]})`];
+                for(let i = 1; i < layerSizes.length - 1; i++) {
+                    labels.push(`Hidden ${i} (${layerSizes[i]})`);
+                }
+                if (layerSizes.length > 1) {
+                    labels.push(`Output (${layerSizes[layerSizes.length - 1]})`);
+                }
+                return labels;
+            },
+            input_feature_labels: null, 
+            output_class_labels: null, 
+            prediction_processor: (output_val, true_target) => {
+                const is_correct = (Math.round(output_val) === true_target);
+                return { predicted_val: output_val, is_correct };
+            }
+        };
+
+        // Iris Data
+        const iris_raw_data = [
+            [5.1,3.5,1.4,0.2,0], [4.9,3.0,1.4,0.2,0], [4.7,3.2,1.3,0.2,0], [4.6,3.1,1.5,0.2,0], [5.0,3.6,1.4,0.2,0],
+            [5.4,3.9,1.7,0.4,0], [4.6,3.4,1.4,0.3,0], [5.0,3.4,1.5,0.2,0], [4.4,2.9,1.4,0.2,0], [4.9,3.1,1.5,0.1,0],
+            [7.0,3.2,4.7,1.4,1], [6.4,3.2,4.5,1.5,1], [6.9,3.1,4.9,1.5,1], [5.5,2.3,4.0,1.3,1], [6.5,2.8,4.6,1.5,1],
+            [5.7,2.8,4.5,1.3,1], [6.3,3.3,4.7,1.6,1], [4.9,2.4,3.3,1.0,1], [6.6,2.9,4.6,1.3,1], [5.2,2.7,3.9,1.4,1],
+            [6.3,3.3,6.0,2.5,2], [5.8,2.7,5.1,1.9,2], [7.1,3.0,5.9,2.1,2], [6.3,2.9,5.6,1.8,2], [6.5,3.0,5.8,2.2,2],
+            [7.6,3.0,6.6,2.1,2], [4.9,2.5,4.5,1.7,2], [7.3,2.9,6.3,1.8,2], [6.7,2.5,5.8,1.8,2], [7.2,3.6,6.1,2.5,2]
+        ];
+
+        const iris_species = ["Iris-Setosa", "Iris-Versicolor", "Iris-Virginica"];
+        const iris_input_features = ["Sepal Length (cm)", "Sepal Width (cm)", "Petal Length (cm)", "Petal Width (cm)"];
+
+        const numFeatures_iris = iris_raw_data[0].length - 1;
+        const featureMin_iris = Array(numFeatures_iris).fill(Infinity);
+        const featureMax_iris = Array(numFeatures_iris).fill(-Infinity);
+
+        iris_raw_data.forEach(row => {
+            for (let i = 0; i < numFeatures_iris; i++) {
+                featureMin_iris[i] = Math.min(featureMin_iris[i], row[i]);
+                featureMax_iris[i] = Math.max(featureMax_iris[i], row[i]);
+            }
+        });
+
+        function normalize(value, min, max) {
+            return (value - min) / (max - min);
+        }
+
+        const get_iris_training_data = () => iris_raw_data.map(row => {
+            const inputs = row.slice(0, numFeatures_iris).map((val, i) => normalize(val, featureMin_iris[i], featureMax_iris[i]));
+            const targetSpecies = row[numFeatures_iris];
+            const targets = Array(iris_species.length).fill(0);
+            targets[targetSpecies] = 1; 
+            return [inputs, targets];
+        });
+
+        const iris_test_cases_display = [
+            [[5.1,3.5,1.4,0.2], 0], // Setosa
+            [[4.9,3.0,1.4,0.2], 0], // Setosa
+            [[7.0,3.2,4.7,1.4], 1], // Versicolor
+            [[6.3,3.3,4.7,1.6], 1], // Versicolor
+            [[6.3,3.3,6.0,2.5], 2], // Virginica
+            [[7.2,3.6,6.1,2.5], 2], // Virginica
+            [[5.8,2.7,4.1,1.0], 1], 
+            [[6.0,2.7,5.1,1.6], 1]  
+        ].map(item => {
+            const normalizedInputs = item[0].map((val, i) => normalize(val, featureMin_iris[i], featureMax_iris[i]));
+            return [normalizedInputs, item[1], item[0]]; // Normalized inputs, true output index, original inputs
+        });
+
+        const iris_config = {
+            layer_structure: [4, 6, 4, 3], // 4 inputs, 3 outputs
+            training_data: get_iris_training_data(),
+            test_cases: iris_test_cases_display,
+            epochs: 50000,
+            learningRate: 0.05,
+            architecture_description: `
+                <p><strong>Input Layer:</strong> 4 neurons (Sepal Length, Sepal Width, Petal Length, Petal Width)</p>
+                <p><strong>Hidden Layer 1:</strong> <span id="hidden1Size"></span> neurons</p>
+                <p><strong>Hidden Layer 2:</strong> <span id="hidden2Size"></span> neurons</p>
+                <p><strong>Output Layer:</strong> 3 neurons (Iris-Setosa, Iris-Versicolor, Iris-Virginica)</p>
+            `,
+            get_test_table_headers: () => `
+                <th>Input Features</th>
+                <th>Expected Species</th>
+                <th>Predicted Probabilities</th>
+                <th>Predicted Species</th>
+                <th>Status</th>
+            `,
+            get_test_row: (inputs, true_output_idx, prediction_idx, is_correct, raw_probabilities, original_inputs) => {
+                const predicted_species = iris_species[prediction_idx];
+                const true_species = iris_species[true_output_idx];
+                const statusClass = is_correct ? 'good-prediction' : 'bad-prediction';
+                return `
+                    <td>[${original_inputs.map(n => n.toFixed(1)).join(', ')}]</td>
+                    <td>${true_species}</td>
+                    <td>[${raw_probabilities.map(p => p.toFixed(3)).join(', ')}]</td>
+                    <td>${predicted_species}</td>
+                    <td class="${statusClass}">${is_correct ? 'Correct' : 'Incorrect'}</td>
+                `;
+            },
+            get_layer_labels: (layerSizes) => {
+                if (!Array.isArray(layerSizes) || layerSizes.length < 1) return [];
+                const labels = [`Input (${layerSizes[0]})`];
+                for(let i = 1; i < layerSizes.length - 1; i++) {
+                    labels.push(`Hidden ${i} (${layerSizes[i]})`);
+                }
+                if (layerSizes.length > 1) {
+                    labels.push(`Output (${layerSizes[layerSizes.length - 1]})`);
+                }
+                return labels;
+            },
+            input_feature_labels: iris_input_features,
+            output_class_labels: iris_species,
+            prediction_processor: (output_idx, true_target_idx) => { 
+                const is_correct = (output_idx === true_target_idx);
+                return { predicted_val: output_idx, is_correct };
+            }
+        };
+
+        let currentConfig; 
+        let dnn; 
+
+        // DOM elements
+        let useCaseSelector, epochsInput, learningRateInput, trainButton, resetButton, trainingStatus, trainingOutput, 
+            networkArchitectureDiv, testResultsDescription, testResultsHeader, testResultsBody;
+
+        function updateUIForUseCase(config) {
+            currentConfig = config;
+
+            // Update Network Architecture Description
+            networkArchitectureDiv.innerHTML = `<h2>Network Architecture</h2>${config.architecture_description}`;
+            const hidden1SizeElem = document.getElementById('hidden1Size');
+            if (hidden1SizeElem) hidden1SizeElem.textContent = config.layer_structure[1];
+            const hidden2SizeElem = document.getElementById('hidden2Size');
+            if (hidden2SizeElem) hidden2SizeElem.textContent = config.layer_structure[2];
+
+            // Update Training Controls defaults
+            epochsInput.value = config.epochs;
+            learningRateInput.value = config.learningRate;
+
+            // Update Test Results Headers
+            testResultsHeader.innerHTML = config.get_test_table_headers();
+            testResultsDescription.textContent = `Predictions on ${useCaseSelector.options[useCaseSelector.selectedIndex].text}:`;
+
+            // Initialize/reset DNN with new architecture
+            dnn = new DeepNeuralNetwork(currentConfig.layer_structure);
+
+            // Redraw graph and test results
+            displayNetworkVisualization();
+            displayTestResults();
+
+            // Clear training output and reset status
+            trainingOutput.textContent = '';
+            trainingStatus.textContent = "Status: Ready to train";
+        }
+
+        function displayNetworkVisualization() {
+            drawNetworkGraph(
+                dnn, 
+                currentConfig.get_layer_labels(dnn.layerSizes), 
+                currentConfig.input_feature_labels, 
+                currentConfig.output_class_labels
+            );
+        }
+
+        function displayTestResults() {
+            testResultsBody.innerHTML = '';
+            
+            currentConfig.test_cases.forEach(test_case_data => {
+                let inputs, true_output_or_idx, original_inputs;
+                if (useCaseSelector.value === 'xor') {
+                    [inputs, true_output_or_idx] = test_case_data;
+                    original_inputs = inputs; 
+                } else { 
+                    [inputs, true_output_or_idx, original_inputs] = test_case_data;
+                }
+
+                const { output: raw_output_probabilities } = dnn.forward(inputs);
+                const prediction_result_val = dnn.predict(inputs); 
+
+                const { predicted_val, is_correct } = currentConfig.prediction_processor(prediction_result_val, true_output_or_idx);
+
+                const row = document.createElement('tr');
+                row.innerHTML = currentConfig.get_test_row(
+                    inputs, 
+                    true_output_or_idx, 
+                    predicted_val, 
+                    is_correct, 
+                    raw_output_probabilities, 
+                    original_inputs
+                );
+                testResultsBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get references to DOM elements
+            useCaseSelector = document.getElementById('useCaseSelector');
+            epochsInput = document.getElementById('epochs');
+            learningRateInput = document.getElementById('learningRate');
+            trainButton = document.getElementById('trainButton');
+            resetButton = document.getElementById('resetButton');
+            trainingStatus = document.getElementById('trainingStatus');
+            trainingOutput = document.getElementById('trainingOutput');
+            networkArchitectureDiv = document.getElementById('networkArchitecture');
+            networkVisualization = document.getElementById('networkGraph'); 
+            testResultsDescription = document.getElementById('testResultsDescription');
+            testResultsHeader = document.getElementById('testResultsHeader');
+            testResultsBody = document.getElementById('testResultsBody');
+
+            // Initial load based on default selection (Iris)
+            updateUIForUseCase(iris_config);
+
+            // Event Listeners
+            useCaseSelector.addEventListener('change', (event) => {
+                const selectedUseCase = event.target.value;
+                if (selectedUseCase === 'xor') {
+                    updateUIForUseCase(xor_config);
+                } else if (selectedUseCase === 'iris') {
+                    updateUIForUseCase(iris_config);
+                }
+            });
+
+            trainButton.addEventListener('click', async () => {
+                trainButton.disabled = true;
+                resetButton.disabled = true;
+                const epochs = parseInt(epochsInput.value);
+                const learningRate = parseFloat(learningRateInput.value);
+
+                trainingOutput.textContent = ''; 
+                await dnn.train(currentConfig.training_data, epochs, learningRate, trainingOutput, trainingStatus);
+                
+                displayNetworkVisualization(); 
+                displayTestResults(); 
+                trainButton.disabled = false;
+                resetButton.disabled = false;
+            });
+
+            resetButton.addEventListener('click', () => {
+                dnn = new DeepNeuralNetwork(currentConfig.layer_structure); 
+                displayNetworkVisualization(); 
+                displayTestResults();
+                trainingOutput.textContent = '';
+                trainingStatus.textContent = "Status: Ready to train";
+            });
+        }); 
+
+    </script>
+</body>
+</html>
