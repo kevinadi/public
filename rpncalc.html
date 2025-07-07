@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPN Calculator</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            /* Light Mode Defaults */
+            --bg-color: #f0f0f0; /* Light background for the whole page */
+            --calculator-bg: #ffffff;
+            --calculator-border: #e0e0e0;
+            --display-bg: #f9fafb;
+            --display-border: #f3f4f6;
+            --display-text: #4b5563;
+            --x-register-text: #1f2937;
+            --button-bg: #ffffff;
+            --button-text: #333333;
+            --button-border: #d1d5db; /* Light gray border for buttons */
+            --button-active-bg: #e0e0e0;
+            --operator-bg: #3b82f6; /* blue-500 */
+            --operator-text: #ffffff;
+            --operator-active-bg: #2563eb; /* blue-600 */
+            --function-bg: #e5e7eb; /* gray-200 */
+            --function-text: #4b5563; /* gray-800 */
+            --function-active-bg: #d1d5db; /* gray-300 */
+            --enter-bg: #22c55e; /* green-500 */
+            --enter-text: #ffffff;
+            --enter-active-bg: #16a34a; /* green-600 */
+            --lit-effect-color: rgba(255, 255, 255, 0.7); /* White flash for light mode */
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode Overrides */
+            --bg-color: #121212; /* Very dark background for the whole page */
+            --calculator-bg: #1a1a1a; /* Very dark grey for calculator body */
+            --calculator-border: #2a2a2a; /* Darker border for calculator body */
+            --display-bg: #000000; /* Black for display */
+            --display-border: #333333; /* Darker border for display */
+            --display-text: #e0e0e0; /* Light gray for display text */
+            --x-register-text: #f0f0f0; /* Lighter gray for X register */
+            --button-bg: #333333; /* Darker buttons */
+            --button-text: #e0e0e0; /* Light text for buttons */
+            --button-border: #4a4a4a; /* Darker border for buttons */
+            --button-active-bg: #444444; /* Slightly lighter active state */
+            --operator-bg: #3b82f6; /* blue-500 (can remain same or slightly darker) */
+            --operator-text: #ffffff;
+            --operator-active-bg: #2563eb;
+            --function-bg: #3a3a3a; /* Darker function buttons */
+            --function-text: #e0e0e0;
+            --function-active-bg: #4a4a4a;
+            --enter-bg: #22c55e;
+            --enter-text: #ffffff;
+            --enter-active-bg: #16a34a;
+            --lit-effect-color: rgba(255, 255, 255, 0.1); /* Very subtle white flash for dark mode */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color); /* Controlled by CSS variable */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease; /* Smooth transition for theme change */
+        }
+
+        .calculator {
+            background-color: var(--calculator-bg);
+            border-color: var(--calculator-border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calculator-button {
+            @apply flex justify-center items-center p-4 rounded-lg shadow-md text-xl font-semibold;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: 1px solid var(--button-border); /* Use CSS variable for button border */
+            transition: background-color 0.1s ease-in-out, transform 0.1s ease-in-out, border-color 0.3s ease, color 0.3s ease; /* Added color transition */
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .calculator-button:active {
+            background-color: var(--button-active-bg);
+            transform: translateY(1px);
+        }
+
+        .operator-button {
+            background-color: var(--operator-bg);
+            color: var(--operator-text);
+        }
+
+        .operator-button:active {
+            background-color: var(--operator-active-bg);
+        }
+
+        .function-button {
+            background-color: var(--function-bg);
+            color: var(--function-text);
+        }
+
+        .function-button:active {
+            background-color: var(--function-active-bg);
+        }
+
+        .enter-button {
+            background-color: var(--enter-bg);
+            color: var(--enter-text);
+        }
+
+        .enter-button:active {
+            background-color: var(--enter-active-bg);
+        }
+
+        .display {
+            background-color: var(--display-bg);
+            border-color: var(--display-border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .display-line {
+            @apply text-right text-lg;
+            color: var(--display-text);
+            transition: color 0.3s ease;
+        }
+
+        .x-register {
+            @apply text-4xl font-bold;
+            color: var(--x-register-text);
+            transition: color 0.3s ease;
+        }
+
+        /* Button press "light up" effect */
+        .button-lit {
+            position: relative;
+            z-index: 1; /* Ensure the pseudo-element is above the button content */
+        }
+
+        .button-lit::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--lit-effect-color); /* Use CSS variable for color */
+            border-radius: inherit; /* Inherit border-radius from button */
+            opacity: 1;
+            animation: fadeOut 0.3s forwards; /* Animation for fade out */
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Theme toggle button styling */
+        .theme-toggle-container {
+            @apply flex justify-end mb-4;
+        }
+
+        .theme-toggle-button {
+            @apply p-2 rounded-full shadow-md text-sm font-semibold;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: 1px solid var(--button-border); /* Use CSS variable for toggle button border */
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .theme-toggle-button:hover {
+            background-color: var(--button-active-bg);
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator p-6 rounded-2xl shadow-xl w-full max-w-md border">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+            <button id="theme-toggle" class="theme-toggle-button">
+                Toggle Dark Mode
+            </button>
+        </div>
+
+        <!-- Display Area -->
+        <div class="display p-4 mb-4 rounded-xl shadow-inner border">
+            <div id="t-register" class="display-line">T: 0</div>
+            <div id="z-register" class="display-line">Z: 0</div>
+            <div id="y-register" class="display-line">Y: 0</div>
+            <div id="x-register" class="display-line x-register">X: 0</div>
+        </div>
+
+        <!-- Keypad Area -->
+        <div class="calculator-grid">
+            <!-- Row 1: Scientific Functions -->
+            <button class="calculator-button function-button" data-action="sin">sin</button>
+            <button class="calculator-button function-button" data-action="cos">cos</button>
+            <button class="calculator-button function-button" data-action="tan">tan</button>
+            <button class="calculator-button function-button" data-action="pi">&pi;</button>
+
+            <!-- Row 2: Scientific Functions -->
+            <button class="calculator-button function-button" data-action="asin">asin</button>
+            <button class="calculator-button function-button" data-action="acos">acos</button>
+            <button class="calculator-button function-button" data-action="atan">atan</button>
+            <button class="calculator-button function-button" data-action="e">e</button>
+
+            <!-- Row 3: Logarithmic and Power Functions -->
+            <button class="calculator-button function-button" data-action="log">log</button>
+            <button class="calculator-button function-button" data-action="ln">ln</button>
+            <button class="calculator-button function-button" data-action="pow">y<sup>x</sup></button>
+            <button class="calculator-button function-button" data-action="sqrt">&radic;x</button>
+
+            <!-- Row 4: Stack Operations -->
+            <button class="calculator-button function-button" data-action="roll">ROLL&darr;</button>
+            <button class="calculator-button function-button" data-action="swap">x&harr;y</button>
+            <button class="calculator-button function-button" data-action="drop">DROP</button>
+            <button class="calculator-button function-button" data-action="clx">CLx</button>
+
+            <!-- Row 5: Numbers and Basic Operators -->
+            <button class="calculator-button" data-action="digit">7</button>
+            <button class="calculator-button" data-action="digit">8</button>
+            <button class="calculator-button" data-action="digit">9</button>
+            <button class="calculator-button operator-button" data-action="divide">&divide;</button>
+
+            <!-- Row 6: Numbers and Basic Operators -->
+            <button class="calculator-button" data-action="digit">4</button>
+            <button class="calculator-button" data-action="digit">5</button>
+            <button class="calculator-button" data-action="digit">6</button>
+            <button class="calculator-button operator-button" data-action="multiply">&times;</button>
+
+            <!-- Row 7: Numbers and Basic Operators -->
+            <button class="calculator-button" data-action="digit">1</button>
+            <button class="calculator-button" data-action="digit">2</button>
+            <button class="calculator-button" data-action="digit">3</button>
+            <button class="calculator-button operator-button" data-action="subtract">-</button>
+
+            <!-- Row 8: Numbers and Basic Operators -->
+            <button class="calculator-button" data-action="digit">0</button>
+            <button class="calculator-button" data-action="decimal">.</button>
+            <button class="calculator-button operator-button" data-action="chs">CHS</button>
+            <button class="calculator-button operator-button" data-action="add">+</button>
+
+            <!-- Row 9: Enter and Clear All -->
+            <button class="calculator-button enter-button col-span-2" data-action="enter">ENTER</button>
+            <button class="calculator-button function-button col-span-2" data-action="clear-all">CLEAR ALL</button>
+        </div>
+    </div>
+
+    <script>
+        // RPN Calculator Logic
+        const stack = [0, 0, 0, 0]; // X, Y, Z, T registers
+        let currentInput = '0';
+        let isNewNumber = true; // True if the next digit should start a new number in X
+
+        // DOM elements for display
+        const xRegisterDisplay = document.getElementById('x-register');
+        const yRegisterDisplay = document.getElementById('y-register');
+        const zRegisterDisplay = document.getElementById('z-register');
+        const tRegisterDisplay = document.getElementById('t-register');
+        const themeToggleButton = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        /**
+         * Formats a number for display, handling precision and potential errors.
+         * @param {number} num The number to format.
+         * @returns {string} The formatted string.
+         */
+        function formatNumber(num) {
+            if (isNaN(num) || !isFinite(num)) {
+                return 'Error';
+            }
+            // Limit to a reasonable number of decimal places for display
+            // and remove trailing zeros after decimal point if any
+            return parseFloat(num.toFixed(10)).toString();
+        }
+
+        /**
+         * Updates the calculator display with current stack values.
+         */
+        function updateDisplay() {
+            xRegisterDisplay.textContent = `X: ${formatNumber(stack[0])}`;
+            yRegisterDisplay.textContent = `Y: ${formatNumber(stack[1])}`;
+            zRegisterDisplay.textContent = `Z: ${formatNumber(stack[2])}`;
+            tRegisterDisplay.textContent = `T: ${formatNumber(stack[3])}`;
+        }
+
+        /**
+         * Handles digit button presses.
+         * @param {string} digit The digit pressed.
+         */
+        function handleDigit(digit) {
+            if (isNewNumber) {
+                // If starting a new number after ENTER or operation,
+                // the current X value moves to Y. Z and T are preserved.
+                stack[1] = stack[0]; // Current X moves to Y
+                // Z and T remain unchanged as per test case's specific behavior
+
+                currentInput = digit; // Start new input for X
+                isNewNumber = false;
+            } else {
+                // Append digit to currentInput
+                // Prevent leading zeros unless it's '0.'
+                if (currentInput === '0' && digit !== '.') {
+                    currentInput = digit;
+                } else {
+                    currentInput += digit;
+                }
+            }
+            stack[0] = parseFloat(currentInput); // Update X with the new number
+            updateDisplay();
+        }
+
+        /**
+         * Handles decimal point button press.
+         */
+        function handleDecimal() {
+            if (isNewNumber) {
+                // Similar behavior to starting a new digit for decimal point
+                stack[1] = stack[0]; // Current X moves to Y
+                currentInput = '0.';
+                isNewNumber = false;
+            } else if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+            stack[0] = parseFloat(currentInput);
+            updateDisplay();
+        }
+
+        /**
+         * Handles ENTER button press. Duplicates X to Y, shifts stack.
+         */
+        function handleEnter() {
+            // Shift stack up: T=Z, Z=Y, Y=X
+            stack[3] = stack[2];
+            stack[2] = stack[1];
+            stack[1] = stack[0];
+            // X remains the same
+            isNewNumber = true; // Next digit will start a new number in X
+            updateDisplay();
+        }
+
+        /**
+         * Handles binary operations (+, -, *, /).
+         * @param {function} operation The function to perform (e.g., (a, b) => a + b).
+         */
+        function handleBinaryOperation(operation) {
+            // No implicit ENTER for binary operations.
+            // The values are expected to be in X and Y from previous inputs or operations.
+
+            const operand2 = stack[0]; // X register
+            const operand1 = stack[1]; // Y register
+
+            try {
+                const result = operation(operand1, operand2);
+                if (isNaN(result) || !isFinite(result)) {
+                    throw new Error("Invalid operation result");
+                }
+                stack[0] = result; // Result in X
+                stack[1] = stack[2]; // Z moves to Y
+                stack[2] = stack[3]; // T moves to Z
+                stack[3] = 0;        // T cleared, as per standard binary operation behavior (not DROP)
+            } catch (error) {
+                console.error("Calculation error:", error);
+                stack[0] = NaN; // Indicate error in X register
+            }
+            currentInput = formatNumber(stack[0]); // Sync currentInput with new X
+            isNewNumber = true; // Next digit starts a new number
+            updateDisplay();
+        }
+
+        /**
+         * Handles unary operations (sin, cos, log, etc.).
+         * @param {function} operation The function to perform (e.g., Math.sin).
+         */
+        function handleUnaryOperation(operation) {
+            // No implicit ENTER for unary operations, just operate on X
+            const operand = stack[0]; // X register
+
+            try {
+                const result = operation(operand);
+                if (isNaN(result) || !isFinite(result)) {
+                    throw new Error("Invalid operation result");
+                }
+                stack[0] = result; // Update X register directly
+            } catch (error) {
+                console.error("Calculation error:", error);
+                stack[0] = NaN; // Indicate error in X register
+            }
+            currentInput = formatNumber(stack[0]); // Sync currentInput with new X
+            isNewNumber = true; // Next digit starts a new number
+            updateDisplay();
+        }
+
+        /**
+         * Handles constant values (pi, e).
+         * When a constant is pressed, it acts like entering a new number.
+         * The current X should be pushed to Y, and the constant becomes the new X.
+         */
+        function handleConstant(constant) {
+            // Similar behavior to starting a new digit for constants
+            stack[1] = stack[0]; // Current X moves to Y
+            stack[0] = constant; // Place constant in X
+            currentInput = formatNumber(stack[0]); // Sync currentInput with new X
+            isNewNumber = true; // Next digit starts a new number
+            updateDisplay();
+        }
+
+        // Event Listener for all calculator buttons
+        document.querySelector('.calculator-grid').addEventListener('click', (event) => {
+            const button = event.target.closest('.calculator-button');
+            if (!button) return; // Not a calculator button
+
+            const action = button.dataset.action;
+            const value = button.textContent;
+
+            // Add "light up" effect
+            button.classList.add('button-lit');
+            setTimeout(() => {
+                button.classList.remove('button-lit');
+            }, 300); // Duration of the fadeOut animation
+
+            switch (action) {
+                case 'digit':
+                    handleDigit(value);
+                    break;
+                case 'decimal':
+                    handleDecimal();
+                    break;
+                case 'enter':
+                    handleEnter();
+                    break;
+                case 'add':
+                    handleBinaryOperation((a, b) => a + b);
+                    break;
+                case 'subtract':
+                    handleBinaryOperation((a, b) => a - b);
+                    break;
+                case 'multiply':
+                    handleBinaryOperation((a, b) => a * b);
+                    break;
+                case 'divide':
+                    handleBinaryOperation((a, b) => {
+                        if (b === 0) throw new Error("Division by zero");
+                        return a / b;
+                    });
+                    break;
+                case 'chs': // Change Sign (unary operation)
+                    handleUnaryOperation(num => -num);
+                    break;
+                case 'clx': // Clear X
+                    stack[0] = 0;
+                    currentInput = '0';
+                    isNewNumber = true;
+                    updateDisplay();
+                    break;
+                case 'drop': // Drop X, shift stack up, T is duplicated
+                    stack[0] = stack[1];
+                    stack[1] = stack[2];
+                    stack[2] = stack[3];
+                    // stack[3] remains unchanged (T is duplicated)
+                    currentInput = formatNumber(stack[0]); // Sync currentInput with new X
+                    isNewNumber = true;
+                    updateDisplay();
+                    break;
+                case 'swap': // Swap X and Y
+                    [stack[0], stack[1]] = [stack[1], stack[0]];
+                    currentInput = formatNumber(stack[0]); // Sync currentInput with new X
+                    isNewNumber = true;
+                    updateDisplay();
+                    break;
+                case 'roll': // Roll stack down (X to T, T to Z, Z to Y, Y to X)
+                    const tempX = stack[0];
+                    stack[0] = stack[1];
+                    stack[1] = stack[2];
+                    stack[2] = stack[3];
+                    stack[3] = tempX;
+                    currentInput = formatNumber(stack[0]); // Sync currentInput with new X
+                    isNewNumber = true;
+                    updateDisplay();
+                    break;
+                case 'sin':
+                    handleUnaryOperation(Math.sin);
+                    break;
+                case 'cos':
+                    handleUnaryOperation(Math.cos);
+                    break;
+                case 'tan':
+                    handleUnaryOperation(Math.tan);
+                    break;
+                case 'asin': // Arc sin (radians)
+                    handleUnaryOperation(Math.asin);
+                    break;
+                case 'acos': // Arc cos (radians)
+                    handleUnaryOperation(Math.acos);
+                    break;
+                case 'atan': // Arc tan (radians)
+                    handleUnaryOperation(Math.atan);
+                    break;
+                case 'log': // Base 10 log
+                    handleUnaryOperation(num => {
+                        if (num <= 0) throw new Error("Log of non-positive number");
+                        return Math.log10(num);
+                    });
+                    break;
+                case 'ln': // Natural log (base e)
+                    handleUnaryOperation(num => {
+                        if (num <= 0) throw new Error("Ln of non-positive number");
+                        return Math.log(num);
+                    });
+                    break;
+                case 'pow': // y^x (y is Y register, x is X register)
+                    handleBinaryOperation((y, x) => Math.pow(y, x));
+                    break;
+                case 'sqrt': // Square root of X
+                    handleUnaryOperation(num => {
+                        if (num < 0) throw new Error("Square root of negative number");
+                        return Math.sqrt(num);
+                    });
+                    break;
+                case 'pi':
+                    handleConstant(Math.PI);
+                    break;
+                case 'e':
+                    handleConstant(Math.E);
+                    break;
+                case 'clear-all':
+                    stack[0] = 0;
+                    stack[1] = 0;
+                    stack[2] = 0;
+                    stack[3] = 0;
+                    currentInput = '0';
+                    isNewNumber = true;
+                    updateDisplay();
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        });
+
+        // Theme Toggle Logic
+        themeToggleButton.addEventListener('click', () => {
+            if (body.dataset.theme === 'dark') {
+                body.removeAttribute('data-theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+            }
+        });
+
+        // Initial display update
+        updateDisplay();
+    </script>
+</body>
+</html>
