@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Previewer</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Add dark mode support to Tailwind
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    
+    <!-- markdown-it for Markdown to HTML conversion -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
+
+    <!-- DOMPurify for sanitizing HTML to prevent XSS attacks -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.8/dist/purify.min.js"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to enhance the preview area's typography */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Light Mode Styles */
+        .prose-preview h1, .prose-preview h2, .prose-preview h3, .prose-preview h4, .prose-preview h5, .prose-preview h6 {
+            margin-bottom: 0.5em; margin-top: 1em; font-weight: 600;
+        }
+        .prose-preview h1 { font-size: 2.25em; }
+        .prose-preview h2 { font-size: 1.75em; }
+        .prose-preview h3 { font-size: 1.5em; }
+        .prose-preview p { margin-bottom: 1em; line-height: 1.6; }
+        .prose-preview a { color: #3b82f6; text-decoration: none; }
+        .prose-preview a:hover { text-decoration: underline; }
+        .prose-preview code { background-color: #f3f4f6; padding: 0.2em 0.4em; margin: 0; font-size: 85%; border-radius: 6px; font-family: monospace; }
+        .prose-preview pre { background-color: #1f2937; color: #d1d5db; padding: 1em; border-radius: 8px; overflow-x: auto; }
+        .prose-preview pre code { background-color: transparent; padding: 0; }
+        .prose-preview blockquote { border-left: 4px solid #d1d5db; padding-left: 1em; margin-left: 0; color: #6b7280; }
+        
+        /* CORRECTED: Styles for lists to show bullets and numbers */
+        .prose-preview ul {
+            list-style-type: disc;
+            list-style-position: outside;
+            padding-left: 1.5em;
+            margin-bottom: 1em;
+        }
+        .prose-preview ol {
+            list-style-type: decimal;
+            list-style-position: outside;
+            padding-left: 1.5em;
+            margin-bottom: 1em;
+        }
+
+        .prose-preview li { margin-bottom: 0.5em; }
+        .prose-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+        .prose-preview th, .prose-preview td { border: 1px solid #d1d5db; padding: 0.5em 1em; }
+        .prose-preview th { background-color: #f9fafb; font-weight: 600; }
+        .prose-preview img { max-width: 100%; height: auto; border-radius: 8px; }
+
+        /* Dark Mode Styles */
+        .dark .prose-preview { color: #d1d5db; }
+        .dark .prose-preview h1, .dark .prose-preview h2, .dark .prose-preview h3, .dark .prose-preview h4, .dark .prose-preview h5, .dark .prose-preview h6 { color: #f9fafb; }
+        .dark .prose-preview a { color: #60a5fa; }
+        .dark .prose-preview code { background-color: #374151; color: #d1d5db; }
+        .dark .prose-preview pre { background-color: #111827; color: #e5e7eb; }
+        .dark .prose-preview blockquote { border-left-color: #4b5563; color: #9ca3af; }
+        .dark .prose-preview th, .dark .prose-preview td { border-color: #4b5563; }
+        .dark .prose-preview th { background-color: #1f2937; }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+
+    <div class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="bg-white dark:bg-slate-800 shadow-sm z-10 border-b border-slate-200 dark:border-slate-700">
+            <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Markdown Live Preview</h1>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Type your Markdown in the editor, and see the result instantly.</p>
+                </div>
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" type="button" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 dark:focus:ring-slate-700 rounded-lg text-sm p-2.5">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-.707 10.607a1 1 0 010-1.414l.707-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM2 11a1 1 0 100-2H1a1 1 0 100 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content: Editor and Preview Panes -->
+        <main class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 min-h-0">
+            
+            <!-- Editor Pane -->
+            <div class="flex flex-col">
+                <label for="markdown-input" class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Editor</label>
+                <textarea 
+                    id="markdown-input" 
+                    class="w-full h-full p-4 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out resize-none font-mono text-sm bg-white dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                    placeholder="## Hello, World!&#10;&#10;Start typing your markdown here..."
+                ></textarea>
+            </div>
+
+            <!-- Preview Pane -->
+            <div class="flex flex-col">
+                 <label for="preview-output" class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Preview</label>
+                <div 
+                    id="preview-output" 
+                    class="w-full h-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-y-auto prose-preview"
+                ></div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // DOM Elements
+        const markdownInput = document.getElementById('markdown-input');
+        const previewOutput = document.getElementById('preview-output');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Initialize markdown-it
+        const md = window.markdownit();
+
+        // Set default markdown content
+        const defaultMarkdown = `
+# Welcome to the Markdown Previewer!
+
+This is a live previewer. Whatever you type on the left will be rendered as HTML on the right.
+
+## Features
+
+- **Real-time updates:** No need to press a button.
+- **Dark Mode:** Toggle between light and dark themes.
+- **Styling:** Styled with Tailwind CSS for a clean look.
+- **Safe:** Uses DOMPurify to sanitize HTML output.
+
+### Numbered Lists
+1. First item
+2. Second item
+3. Third item
+
+### Code Blocks
+You can write inline code like \`const x = 10;\` or multi-line blocks:
+\`\`\`javascript
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+console.log(greet('Developer'));
+\`\`\`
+
+### Blockquotes
+> "The greatest glory in living lies not in never falling, but in rising every time we fall." - Nelson Mandela
+`;
+
+        // Function to update the preview
+        function updatePreview() {
+            const markdownText = markdownInput.value;
+            // Use markdown-it to render the markdown text
+            const dirtyHtml = md.render(markdownText);
+            // Sanitize the generated HTML
+            const cleanHtml = DOMPurify.sanitize(dirtyHtml);
+            previewOutput.innerHTML = cleanHtml;
+        }
+
+        // Theme handling
+        function applyTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
+            }
+        }
+
+        // Event listener for the theme toggle button
+        themeToggleBtn.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            applyTheme(isDark);
+        });
+
+        // Initialize App
+        function init() {
+            // Check for saved theme in localStorage or user's system preference
+            const isDarkMode = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            applyTheme(isDarkMode);
+
+            // Set initial markdown content and render preview
+            markdownInput.value = defaultMarkdown.trim();
+            updatePreview();
+
+            // Add event listeners for the editor
+            markdownInput.addEventListener('keyup', updatePreview);
+            markdownInput.addEventListener('paste', updatePreview);
+        }
+
+        // Run initialization on page load
+        init();
+
+    </script>
+
+</body>
+</html>
