@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KB Article Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@tailwindcss/typography@0.5.10/dist/typography.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Enhanced prose styling for markdown content */
+        .markdown-content {
+            line-height: 1.6;
+            color: #374151;
+        }
+
+        .markdown-content h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin: 1.5rem 0 1rem 0;
+            color: #111827;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.75rem 0;
+            color: #111827;
+        }
+
+        .markdown-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1rem 0 0.5rem 0;
+            color: #111827;
+        }
+
+        .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0.75rem 0 0.5rem 0;
+            color: #111827;
+        }
+
+        .markdown-content p {
+            margin: 0.75rem 0;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .markdown-content li {
+            margin: 0.25rem 0;
+        }
+
+        .markdown-content ul li {
+            list-style-type: disc;
+        }
+
+        .markdown-content ol li {
+            list-style-type: decimal;
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding: 0.5rem 0 0.5rem 1rem;
+            margin: 1rem 0;
+            background-color: #f9fafb;
+            font-style: italic;
+        }
+
+        .markdown-content code {
+            background-color: #f3f4f6;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #dc2626;
+        }
+
+        .markdown-content pre {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+            font-size: 0.875rem;
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .markdown-content th, .markdown-content td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .markdown-content th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .markdown-content a {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .markdown-content a:hover {
+            color: #1d4ed8;
+        }
+
+        .markdown-content strong {
+            font-weight: 600;
+        }
+
+        .markdown-content em {
+            font-style: italic;
+        }
+
+        .markdown-content hr {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">KB Article Assistant</h1>
+            <p class="mt-2 text-lg text-gray-600">Paste your draft below and use the AI tools to refine it.</p>
+        </header>
+
+        <main class="bg-white p-6 rounded-xl shadow-md">
+            <!-- Input Text Area -->
+            <div>
+                <label for="article-input" class="block text-sm font-medium text-gray-700 mb-2">Article Draft</label>
+                <textarea id="article-input" rows="10" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Paste your bullet points or rough draft here..."></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex flex-wrap gap-3 justify-center">
+                <button id="expand-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16m-8-8v16"/></svg>
+                    Suggest improvements
+                </button>
+                <button id="condense-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-sm flex items-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3m9-9l-9 9 9 9"/></svg>
+                    Make More Concise
+                </button>
+                <button id="search-btn" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors shadow-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Search for Duplicates
+                </button>
+            </div>
+
+            <!-- Result Display -->
+            <div id="result-container" class="mt-8 border-t pt-6 hidden">
+                <h2 class="text-xl font-bold text-gray-800">Suggested Revision</h2>
+                <p id="model-info" class="text-sm text-gray-500 mt-1 hidden">Model: <span id="model-name"></span></p>
+                <div id="loader" class="mt-4 flex items-center gap-3 hidden">
+                    <div class="spinner w-6 h-6"></div>
+                    <p class="text-gray-600">Generating...</p>
+                </div>
+                <button id="stop-btn" class="mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12"></rect></svg>
+                    Stop Generation
+                </button>
+                <button id="copy-btn-top" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy to Clipboard
+                </button>
+
+                <!-- Tab Navigation -->
+                <div class="mt-4">
+                    <div class="flex border-b border-gray-200">
+                        <button id="rendered-tab" class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-white">
+                            Rendered
+                        </button>
+                        <button id="source-tab" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 bg-white">
+                            Source
+                        </button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div id="rendered-content" class="p-4 bg-gray-50 rounded-b-lg border border-t-0">
+                        <div id="result-output" class="markdown-content bg-white p-4 rounded border min-h-[100px]"></div>
+                    </div>
+                    <div id="source-content" class="p-4 bg-gray-50 rounded-b-lg border border-t-0 hidden">
+                        <pre id="source-output" class="whitespace-pre-wrap text-sm text-gray-800 bg-white p-3 rounded border overflow-auto min-h-[100px]"></pre>
+                    </div>
+                </div>
+
+                <button id="copy-btn" class="mt-4 bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy to Clipboard
+                </button>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const articleInput = document.getElementById('article-input');
+        const expandBtn = document.getElementById('expand-btn');
+        const condenseBtn = document.getElementById('condense-btn');
+        const searchBtn = document.getElementById('search-btn');
+
+        const resultContainer = document.getElementById('result-container');
+        const loader = document.getElementById('loader');
+        const resultOutput = document.getElementById('result-output');
+        const sourceOutput = document.getElementById('source-output');
+        const renderedContent = document.getElementById('rendered-content');
+        const sourceContent = document.getElementById('source-content');
+        const renderedTab = document.getElementById('rendered-tab');
+        const sourceTab = document.getElementById('source-tab');
+        const copyBtn = document.getElementById('copy-btn');
+        const copyBtnTop = document.getElementById('copy-btn-top');
+        const modelInfo = document.getElementById('model-info');
+        const modelName = document.getElementById('model-name');
+        const stopBtn = document.getElementById('stop-btn');
+
+        // Initialize markdown-it with enhanced options
+        const md = window.markdownit({
+            html: true,
+            linkify: true,
+            typographer: true,
+            breaks: true
+        });
+
+        // --- Configuration ---
+        // IMPORTANT: Change this to your actual knowledge base domain for the search to work correctly.
+        const KB_DOMAIN = "yourkb.yourcompany.com";
+
+        // OpenAI-compatible API configuration
+        const apiConfig = {
+            baseUrl: "http://localhost:1234/v1",
+            // model: "google/gemma-3n-e4b"
+            // model: "meta-llama-3.1-8b-instruct"
+            // model: "microsoft/phi-4"
+        };
+
+        // --- Tab Management ---
+        let currentTab = 'rendered';
+        let currentContent = '';
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            if (tabName === 'rendered') {
+                renderedTab.className = 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-white';
+                sourceTab.className = 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 bg-white';
+                renderedContent.classList.remove('hidden');
+                sourceContent.classList.add('hidden');
+            } else {
+                sourceTab.className = 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-white';
+                renderedTab.className = 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 bg-white';
+                sourceContent.classList.remove('hidden');
+                renderedContent.classList.add('hidden');
+            }
+        }
+
+        function updateContent(content) {
+            currentContent = content;
+            // Update source tab
+            sourceOutput.textContent = content;
+            // Update rendered tab
+            try {
+                resultOutput.innerHTML = md.render(content);
+            } catch (error) {
+                console.warn('Markdown rendering failed, showing as text:', error);
+                resultOutput.textContent = content;
+            }
+        }
+
+        function getCurrentContent() {
+            if (currentTab === 'rendered') {
+                return resultOutput.innerText;
+            } else {
+                return sourceOutput.textContent;
+            }
+        }
+
+        // --- Prompts ---
+        const EXPAND_PROMPT_ORIG = `You are a helpful technical writer creating a knowledge base article.
+        Your tone should be concise, clear, direct, and professional. Your audience is
+        other engineers and technical users. Expand the following points into a clear and
+        comprehensive article. Ensure a logical flow and add connecting phrases where
+        necessary. Use bullet points and tables if it makes the article easier to parse
+        and faster to read. The resulting article should be easily scannable, and reads
+        like a professional knowledge base article should. Ensure that the generated
+        markdown is clean and well-structured. Do not introduce new technical concepts
+        not implied by the original points. Additionally, suggest a summary for the
+        article that explains in one short paragraph of no more than 50 words explaining
+        what the article is about in clear terms. The summary should be in this format:
+        "**Summary:** [Your summary here]". Put the summary at the start of the article.
+        ---`;
+        const EXPAND_PROMPT = `You are a helpful technical writer assisting an author of a KB article,
+        who is not an experienced technical writer. Analyze the following draft article,
+        and suggest changes to make it a clear and comprehensive knowledge base article.
+        The final article should be concise, well structured, and easy to parse quickly,
+        to be used by other engineers and technical users. Do not modify the article
+        yourself, but provide suggestions for improvements in a clear and actionable
+        manner. The article is about MongoDB and related topics, so assume that the reader
+        is an engineer familiar with databases, specifically MongoDB, and its concepts.
+        Structure your response in this manner:
+        1. Show your overall conclusion of the draft.
+        2. Show the strengths and weaknesses of the draft, and how implementing the
+        suggestions can improve it.
+        3. Provide detailed suggestions to restructure if it helps to improve the article
+        organization. Show suggestions only. Do not attempt to provide a rewritten
+        article.
+        4. Show a checklist for actionable items that the author can follow to improve
+        the article based on your suggestions. This checklist should be in this
+        format: "[ ] <Checklist item here>", and the checklist should be sequential
+        in order of importance. ---`;
+        const CONDENSE_PROMPT = `You are an expert technical editor tasked with making documentation
+        concise. Your goal is to create a clear, scannable knowledge base article. Analyze
+        the following text and rewrite it to be shorter and more to the point. Remove any
+        redundant phrases, conversational filler, and unnecessary explanations. Focus only
+        on the critical information and present it in a direct, professional tone. If
+        appropriate, you can use a bulleted list for steps or key items, and tables for
+        comparisons and details. If there is a code example, ensure it is formatted
+        correctly. Do not remove any code examples, but you may modify it to improve the
+        clarity of the article. Ensure that the generated markdown is clean and
+        well-structured. Additionally, suggest a summary for the article that explains in
+        one short paragraph of no more than 50 words explaining what the article is about
+        in clear terms. The summary should be in this format: "**Summary:** [Your summary
+        here]". Put the summary at the start of the article. ---`;
+
+        /**
+         * Main function to call the OpenAI-compatible API with streaming
+         * @param {string} basePrompt - The instruction prompt for the LLM.
+         * @param {string} userInput - The text provided by the user.
+         */
+        let abortController = null; // Global variable to track the current request
+
+        async function callLLMAPI(basePrompt, userInput) {
+            // Create a new AbortController for this request
+            abortController = new AbortController();
+
+            // Show loading state
+            resultContainer.classList.remove('hidden');
+            loader.classList.remove('hidden');
+            renderedContent.classList.remove('hidden');
+            copyBtn.classList.add('hidden');
+            copyBtnTop.classList.add('hidden');
+            modelInfo.classList.add('hidden');
+            stopBtn.classList.remove('hidden'); // Show stop button
+
+            const fullPrompt = `${basePrompt}\n\n${userInput}`;
+
+            // Clear previous content and show streaming indicator
+            updateContent('Generating response...');
+
+            try {
+                const response = await fetch(`${apiConfig.baseUrl}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: apiConfig.model,
+                        messages: [
+                            {
+                                role: "user",
+                                content: fullPrompt
+                            }
+                        ],
+                        max_tokens: 10000,
+                        temperature: 0.5,  // Adjust temperature for creativity
+                        stream: true  // Enable streaming
+                    }),
+                    signal: abortController.signal // Add abort signal
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+
+                // Clear the loading message and start streaming
+                updateContent('');
+                // Keep loader visible during streaming
+
+                // Process the streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullContent = '';
+                let modelIdentifier = null;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+
+                    // Keep the last incomplete line in the buffer
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+
+                            if (data === '[DONE]') {
+                                break;
+                            }
+
+                            try {
+                                const parsed = JSON.parse(data);
+
+                                // Capture model identifier from the first chunk
+                                if (!modelIdentifier && parsed.model) {
+                                    modelIdentifier = parsed.model;
+                                    console.log('Model Identifier:', modelIdentifier);
+
+                                    // Show model info immediately when we get it
+                                    modelName.textContent = modelIdentifier;
+                                    modelInfo.classList.remove('hidden');
+                                }
+
+                                const delta = parsed.choices?.[0]?.delta?.content;
+
+                                if (delta) {
+                                    fullContent += delta;
+                                    // Update the display with accumulated content
+                                    updateContent(fullContent);
+                                }
+                            } catch (e) {
+                                // Skip malformed JSON chunks
+                                console.warn('Failed to parse streaming chunk:', e);
+                            }
+                        }
+                    }
+                }
+
+                // Ensure we have some content
+                if (!fullContent.trim()) {
+                    updateContent('No content generated. Please try again.');
+                } else {
+                    // Show copy buttons once streaming is complete
+                    copyBtn.classList.remove('hidden');
+                    copyBtnTop.classList.remove('hidden');
+
+                    // Show model info if we captured it
+                    if (modelIdentifier) {
+                        modelName.textContent = modelIdentifier;
+                        modelInfo.classList.remove('hidden');
+                    }
+                }
+
+                // Hide loader and stop button when streaming is complete
+                loader.classList.add('hidden');
+                stopBtn.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Error calling LLM API:", error);
+                loader.classList.add('hidden');
+                stopBtn.classList.add('hidden');
+
+                if (error.name === 'AbortError') {
+                    // Don't overwrite partial content, just add a note that it was stopped
+                    if (currentContent.trim()) {
+                        // Keep the partial content and add a note
+                        updateContent(currentContent + '\n\n[Generation stopped by user]');
+                    } else {
+                        updateContent('Generation was stopped by user.');
+                    }
+                    copyBtn.classList.remove('hidden');
+                    copyBtnTop.classList.remove('hidden');
+                } else if (error.message.includes('CORS') || error.message.includes('fetch')) {
+                    updateContent(`❌ **CORS Error:** Cannot connect to LLM server
+
+🔧 **Quick Fixes:**
+
+**1. If using LM Studio:**
+- Go to Settings → Server
+- Enable "Allow CORS" or "Enable API"
+- Restart the server
+
+**2. If using a custom server:**
+Add these headers to your server:
+\`\`\`
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: POST, GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+\`\`\`
+
+**3. Quick workaround - Start Chrome with disabled security:**
+\`\`\`bash
+/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --disable-web-security --user-data-dir=/tmp/chrome_dev
+\`\`\``);
+                } else {
+                    updateContent(`An error occurred. Please check the console for details. Details: ${error.message}`);
+                }
+
+                copyBtn.classList.remove('hidden');
+                copyBtnTop.classList.remove('hidden');
+            }
+        }
+
+        // --- Event Listeners ---
+        expandBtn.addEventListener('click', () => {
+            const userInput = articleInput.value;
+            if (!userInput.trim()) {
+                alert("Please enter some text in the draft area first.");
+                return;
+            }
+            callLLMAPI(EXPAND_PROMPT, userInput);
+        });
+
+        condenseBtn.addEventListener('click', () => {
+            const userInput = articleInput.value;
+            if (!userInput.trim()) {
+                alert("Please enter some text in the draft area first.");
+                return;
+            }
+            callLLMAPI(CONDENSE_PROMPT, userInput);
+        });
+
+        searchBtn.addEventListener('click', () => {
+            const userInput = articleInput.value;
+            if (!userInput.trim()) {
+                alert("Please enter some text to search for.");
+                return;
+            }
+            // This implements the "Simple Approach" for searching for duplicates.
+            // It extracts simple keywords and uses a Google "site:" search.
+            alert("Searching for duplicates is not implemented yet.");
+            // const keywords = userInput.split(' ').slice(0, 10).join(' '); // Use first 10 words as keywords
+            // const searchUrl = `https://www.google.com/search?q=site%3A${KB_DOMAIN}+${encodeURIComponent(keywords)}`;
+            // window.open(searchUrl, '_blank');
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = getCurrentContent();
+            // Using the clipboard API with a fallback for older browsers/iframes
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copyBtn.innerText = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path></svg> Copy to Clipboard`;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+            document.body.removeChild(textArea);
+        });
+
+        copyBtnTop.addEventListener('click', () => {
+            const textToCopy = getCurrentContent();
+            // Using the clipboard API with a fallback for older browsers/iframes
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copyBtnTop.innerText = 'Copied!';
+                setTimeout(() => {
+                    copyBtnTop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"></path></svg> Copy to Clipboard`;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+            document.body.removeChild(textArea);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (abortController) {
+                abortController.abort();
+                console.log('Generation stopped by user');
+            }
+        });
+
+        // Tab switching event listeners
+        renderedTab.addEventListener('click', () => {
+            switchTab('rendered');
+        });
+
+        sourceTab.addEventListener('click', () => {
+            switchTab('source');
+        });
+
+    </script>
+</body>
+</html>
