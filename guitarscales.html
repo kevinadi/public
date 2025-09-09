@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guitar Scales</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    .fretboard { font-family: monospace; white-space: pre; }
+    select, button { margin: 0.5em; }
+    .output { margin-top: 2em; }
+  </style>
+</head>
+<body>
+  <h1>Guitar Scales</h1>
+  <label for="tuning">Tuning:</label>
+  <select id="tuning"></select>
+  <label for="scale">Scale/Chord:</label>
+  <select id="scale"></select>
+  <label for="key">Key:</label>
+  <select id="key"></select>
+  <button onclick="renderFretboard()">Show Fretboard</button>
+  <div class="output" id="output"></div>
+
+<script>
+const MAXFRET = 16;
+const notes_flat =  ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const notes_sharp = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const tunings = {
+  'Standard (EADGBE)': [4, 11, 7, 2, 9, 4],
+  'DADGAD': [2, 9, 7, 2, 9, 2],
+  'Drop D (DADGBE)': [2, 9, 7, 2, 9, 4],
+  'Open E (EBEG#BE)': [4, 11, 4, 8, 11, 4]
+};
+const scaledict = [
+  ['Scale', 'Chromatic',        '1,b2,2,b3,3,4,b5,5,b6,6,b7,7'],
+  ['Scale', 'Major',            '1,2,3,4,5,6,7'],
+  ['Scale', 'Natural Minor',    '1,2,b3,4,5,b6,b7'],
+  ['Scale', 'Harmonic Minor',   '1,2,b3,4,5,b6,7'],
+  ['Scale', 'Major Pentatonic', '1,2,3,5,6'],
+  ['Scale', 'Minor Pentatonic', '1,b3,4,5,b7'],
+  ['Scale', 'Blues Pentatonic', '1,b3,4,b5,5,b7'],
+  ['Mode', 'Ionian',            '1,2,3,4,5,6,7'],
+  ['Mode', 'Dorian',            '1,2,b3,4,5,6,b7'],
+  ['Mode', 'Phrygian',          '1,b2,b3,4,5,b6,b7'],
+  ['Mode', 'Lydian',            '1,2,3,#4,5,6,7'],
+  ['Mode', 'Mixolydian',        '1,2,3,4,5,6,b7'],
+  ['Mode', 'Aeolian',           '1,2,b3,4,5,b6,b7'],
+  ['Mode', 'Locrian',           '1,b2,b3,4,b5,b6,b7'],
+  ['Chord', 'Major',            '1,3,5'],
+  ['Chord', 'Minor',            '1,b3,5'],
+  ['Chord', '7th',              '1,3,5,b7'],
+  ['Chord', 'Major 7th',        '1,3,5,7'],
+  ['Chord', 'Minor 7th',        '1,b3,5,b7'],
+  ['Chord', '6th',              '1,3,5,6'],
+  ['Chord', 'Augmented',        '1,3,#5'],
+  ['Chord', 'Diminished',       '1,b3,b5']
+];
+
+function interval2idx(intervalinput) {
+  const interval_flat =  ['1', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'];
+  const interval_sharp = ['1', '#1', '2', '#2', '3', '4', '#4', '5', '#5', '6', '#6', '7'];
+  const useFlat = intervalinput.includes('b');
+  const interval = useFlat ? interval_flat : interval_sharp;
+  return intervalinput.split(',').map(x => interval.indexOf(x));
+}
+
+function center(text, width) {
+  if (text.length >= width) return text;
+  const leftPad = Math.floor((width - text.length) / 2);
+  const rightPad = width - text.length - leftPad;
+  return ' '.repeat(leftPad) + text + ' '.repeat(rightPad);
+}
+
+function populateDropdowns() {
+  const tuningSel = document.getElementById('tuning');
+  Object.keys(tunings).forEach((name, idx) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.text = name;
+    tuningSel.appendChild(opt);
+  });
+  tuningSel.selectedIndex = 0; // Default to Standard tuning
+
+  const scaleSel = document.getElementById('scale');
+  scaledict.forEach((item, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.text = `${item[0]}: ${item[1]}`;
+    scaleSel.appendChild(opt);
+  });
+  const keySel = document.getElementById('key');
+  notes_sharp.forEach(note => {
+    const opt = document.createElement('option');
+    opt.value = note;
+    opt.text = note;
+    keySel.appendChild(opt);
+  });
+  notes_flat.forEach(note => {
+    if (!notes_sharp.includes(note)) {
+      const opt = document.createElement('option');
+      opt.value = note;
+      opt.text = note;
+      keySel.appendChild(opt);
+    }
+  });
+}
+
+function renderFretboard() {
+  const tuningName = document.getElementById('tuning').value;
+  const strings = tunings[tuningName];
+  const scaleinput = parseInt(document.getElementById('scale').value);
+  let key = document.getElementById('key').value;
+  key = key.charAt(0).toUpperCase() + key.slice(1);
+  const scalevalues = scaledict[scaleinput][2];
+  let notes;
+  if (key.includes('b') || scalevalues.includes('b')) {
+    notes = notes_flat;
+  } else {
+    notes = notes_sharp;
+  }
+  const scale = interval2idx(scalevalues).map(x => (x + notes.indexOf(key)) % 12);
+  const scalenotes = scale.map(x => notes[x]);
+  const frets = strings.map(y => Array.from({length: MAXFRET}, (_, x) => notes[(x + y) % 12]));
+  // Remove notes not in scale
+  for (let x = 0; x < 6; x++) {
+    for (let y = 0; y < MAXFRET; y++) {
+      if (!scalenotes.includes(frets[x][y])) {
+        frets[x][y] = '';
+      }
+    }
+  }
+  // Intervals
+  const idx = interval2idx(scalevalues).concat([12]);
+  const intervals = Array.from({length: idx.length-1}, (_, x) => ((idx[x+1]-idx[x])/2).toFixed(1)).join(' - ');
+  // Pretty print
+  const scalename = key + ' ' + scaledict[scaleinput][1] + ' ' + scaledict[scaleinput][0] + ' (' + tuningName + ')';
+  let out = `<div><b>${scalename}</b></div>`;
+  out += `<div>Scale notes: ${scalenotes.map(x => x.padStart(3,' ')).join(' - ')}</div>`;
+  out += `<div>${' '.repeat(12)}${scalevalues.split(',').map(x => x.padStart(3,' ')).join(' - ')}</div>`;
+  out += `<div>Intervals: ${intervals}</div>`;
+  out += '<div class="fretboard">';
+  for (let x = 0; x < 6; x++) {
+    let line = '';
+    let FRET = '|', NUT = '||';
+    // Match Python behavior exactly: open string never gets parentheses
+    if (frets[x][0] === '') {
+      line += '  ' + NUT;
+    } else {
+      line += center(frets[x][0], 2) + NUT;
+    }
+    for (let y = 1; y < MAXFRET; y++) {
+      if (frets[x][y] === '') {
+        line += '-----' + FRET;
+      } else if (frets[x][y] === scalenotes[0] && scaleinput !== 0) {
+        line += ('(' + frets[x][y] + ')').padStart(5,'-') + FRET;
+      } else {
+        line += frets[x][y].padStart(5,'-') + FRET;
+      }
+    }
+    out += line + '\n';
+  }
+  out += '\n' + ' '.repeat(17) + '3' + ' '.repeat(9) + '5' + ' '.repeat(9) + '7' + ' '.repeat(9) + '9' + ' '.repeat(14) + 'oo' + ' '.repeat(14) + '15';
+  out += '</div>';
+  document.getElementById('output').innerHTML = out;
+}
+
+populateDropdowns();
+renderFretboard();
+</script>
+</body>
+</html>
