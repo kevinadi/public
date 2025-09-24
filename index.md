@@ -5,3 +5,4 @@
 - [Sorting Algorithm Visualization](sort.html)
 - [RPN Calculator](rpncalc.html)
 - [Guitar Scales](guitarscales.html)
+- [Lisp Interpreter](lisp.html)
