@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lisp REPL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .repl-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #2d3748;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .repl-output {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            height: 400px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .repl-input {
+            width: 100%;
+            background-color: #4a5568;
+            color: #d1d5db;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 2px solid #4a5568;
+            font-family: monospace;
+            resize: none;
+        }
+        .repl-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #f7fafc;
+            text-align: center;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #a0aec0;
+            text-align: center;
+        }
+        .prompt {
+            color: #4ade80;
+        }
+        .result {
+            color: #fcd34d;
+        }
+        .repl-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            display: none; /* Hide the button as dark mode is now permanent */
+        }
+    </style>
+</head>
+<body>
+
+<div class="repl-container">
+    <h1 class="title">Lisp REPL</h1>
+    <p class="subtitle">A simple Lisp interpreter implemented in JavaScript</p>
+    <div id="repl-output" class="repl-output"></div>
+    <textarea id="repl-input" class="repl-input" rows="5" placeholder="Type a Lisp expression here. Use the button below to run it." spellcheck="false"></textarea>
+    <div class="repl-controls">
+        <button id="dark-mode-toggle" class="btn btn-secondary">Toggle Dark Mode</button>
+        <button id="run-btn" class="btn btn-primary">Run</button>
+    </div>
+</div>
+
+<script>
+    // Lis.js - A Lisp interpreter in JavaScript
+    // Based on Peter Norvig's Python implementation
+    // Source: https://github.com/norvig/pytudes/blob/c33cd6835a506a57d9fe73e3a8317d49babb13e8/py/lis.py
+
+    // Helper functions
+    const toString = (exp) => {
+        if (exp === true) {
+            return '#t';
+        }
+        if (exp === false) {
+            return '#f';
+        }
+        if (Array.isArray(exp)) {
+            return `(${exp.map(toString).join(' ')})`;
+        } else if (typeof exp === 'string' && exp.startsWith('"') && exp.endsWith('"')) {
+            // This is a string literal, not a symbol
+            return exp;
+        } else if (typeof exp === 'string') {
+             // Treat as a symbol
+            return exp;
+        }
+        else {
+            return exp;
+        }
+    };
+
+    const parse = (program) => {
+        return readFromTokens(tokenize(program));
+    };
+
+    const tokenize = (chars) => {
+        // Strip out comments from a semicolon to the end of the line
+        const charsWithoutComments = chars.replace(/(;.*$)/mg, '');
+        // Use a regex to correctly split tokens, including quoted strings
+        return charsWithoutComments.match(/"[^"]*"|\(|\)|'|[^\s()']+/g) || [];
+    };
+
+    const readFromTokens = (tokens) => {
+        if (tokens.length === 0) {
+            throw new Error('unexpected EOF');
+        }
+        const token = tokens.shift();
+        if (token === '(') {
+            let L = [];
+            while (tokens[0] !== ')') {
+                L.push(readFromTokens(tokens));
+            }
+            tokens.shift(); // pop off ')'
+            return L;
+        } else if (token === ')') {
+            throw new Error('unexpected )');
+        } else if (token === "'") {
+            return ['quote', readFromTokens(tokens)];
+        } else {
+            return atom(token);
+        }
+    };
+
+    const atom = (token) => {
+        if (token === '#t') {
+            return true;
+        }
+        if (token === '#f') {
+            return false;
+        }
+        // Handle string literals by checking for surrounding quotes
+        if (token.startsWith('"') && token.endsWith('"')) {
+            return token;
+        }
+        if (!isNaN(parseFloat(token))) {
+            return parseFloat(token);
+        }
+        // All other tokens are considered symbols (represented as strings)
+        return token;
+    };
+    
+    // A robust, native JavaScript implementation of `equal?`
+    const deepEqual = (a, b) => {
+        if (a === b) {
+            return true;
+        }
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) {
+                return false;
+            }
+            for (let i = 0; i < a.length; i++) {
+                if (!deepEqual(a[i], b[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    };
+
+    // Env (Environment)
+    class Env {
+        constructor(parms = [], args = [], outer = null) {
+            this.data = {};
+            for (let i = 0; i < parms.length; i++) {
+                // Symbols are now regular strings
+                this.data[parms[i]] = args[i];
+            }
+            this.outer = outer;
+        }
+
+        find(symbol) {
+            if (symbol in this.data) {
+                return this.data;
+            }
+            if (this.outer) {
+                return this.outer.find(symbol);
+            }
+            throw new Error(`Symbol not found: ${symbol}`);
+        }
+    }
+
+    const standardEnv = () => {
+        const env = new Env();
+        env.data = {
+            '+': (...args) => args.reduce((a, b) => a + b, 0),
+            '-': (...args) => args.length === 1 ? -args[0] : args.slice(1).reduce((a, b) => a - b, args[0]),
+            '*': (...args) => args.reduce((a, b) => a * b, 1),
+            '/': (...args) => args.slice(1).reduce((a, b) => a / b, args[0]),
+            '>': (a, b) => a > b,
+            '<': (a, b) => a < b,
+            '>=': (a, b) => a >= b,
+            '<=': (a, b) => a <= b,
+            '=': (a, b) => a === b,
+            'eq': (a, b) => a === b, 
+            'equal?': deepEqual,
+            'car': (list) => Array.isArray(list) && list.length > 0 ? list[0] : null,
+            'cdr': (list) => Array.isArray(list) && list.length > 1 ? list.slice(1) : [],
+            'cons': (a, b) => [a].concat(b),
+            'abs': Math.abs,
+            'list': (...args) => args,
+            'max': Math.max,
+            'min': Math.min,
+            'not': (x) => !x,
+            'null?': (l) => Array.isArray(l) && l.length === 0,
+            'pair?': (x) => Array.isArray(x) && x.length > 0,
+            'number?': (x) => typeof x === 'number',
+            'procedure?': (x) => typeof x === 'function',
+            'round': Math.round,
+            // Check for a string that is not a string literal
+            'symbol?': (x) => typeof x === 'string' && !x.startsWith('"'),
+        };
+        return env;
+    };
+
+    // Eval
+    const specialForms = {
+      'if': (x, env) => {
+        const [test, conseq, alt] = x.slice(1);
+        const exp = evalExp(test, env) ? conseq : alt;
+        return evalExp(exp, env);
+      },
+      'cond': (x, env) => {
+        for (const [test, exp] of x.slice(1)) {
+          if (test === 'else') {
+            return evalExp(exp, env);
+          }
+          if (evalExp(test, env)) {
+            return evalExp(exp, env);
+          }
+        }
+        return null;
+      },
+      'define': (x, env) => {
+        const [symbol, exp] = x.slice(1);
+        env.data[symbol] = evalExp(exp, env);
+      },
+      'defun': (x, env) => {
+        const [symbol, parms, body] = x.slice(1);
+        const lambdaExp = ['lambda', parms, body];
+        return specialForms['define'](['define', symbol, lambdaExp], env);
+      },
+      // New: 'let' special form for local bindings
+      'let': (x, env) => {
+        const [bindings, ...body] = x.slice(1);
+        const symbols = bindings.map(binding => binding[0]);
+        const values = bindings.map(binding => evalExp(binding[1], env));
+        return specialForms['begin'](['begin'].concat(body), new Env(symbols, values, env));
+      },
+      'quote': (x, env) => {
+        return x.slice(1)[0];
+      },
+      'set!': (x, env) => {
+        const [symbol, exp] = x.slice(1);
+        env.find(symbol)[symbol] = evalExp(exp, env);
+      },
+      'lambda': (x, env) => {
+        const [parms, body] = x.slice(1);
+        return (...args) => evalExp(body, new Env(parms, args, env));
+      },
+      'and': (x, env) => {
+        let result = true;
+        for (const expr of x.slice(1)) {
+          result = evalExp(expr, env);
+          if (!result) {
+            return result;
+          }
+        }
+        return result;
+      },
+      'or': (x, env) => {
+        let result = false;
+        for (const expr of x.slice(1)) {
+          result = evalExp(expr, env);
+          if (result) {
+            return result;
+          }
+        }
+        return result;
+      },
+      // New: 'begin' special form to evaluate a sequence of expressions
+      'begin': (x, env) => {
+        let result;
+        for (const exp of x.slice(1)) {
+          result = evalExp(exp, env);
+        }
+        return result;
+      }
+    };
+
+    const evalExp = (x, env) => {
+        // Handle empty lists, which caused the 'undefined' error
+        if (Array.isArray(x) && x.length === 0) {
+            return x;
+        }
+
+        // Fix: Check if the string is a literal before looking it up
+        if (typeof x === 'string') {
+            if (x.startsWith('"') && x.endsWith('"')) {
+                // It's a string literal, return it as-is
+                return x;
+            }
+            // It's a symbol, look it up in the environment
+            return env.find(x)[x];
+        }
+        
+        if (!Array.isArray(x)) {
+            return x;
+        }
+        const [first, ...rest] = x;
+        
+        if (specialForms.hasOwnProperty(first)) {
+            return specialForms[first](x, env);
+        } else {
+            const proc = evalExp(first, env);
+            const args = rest.map(arg => evalExp(arg, env));
+            if (typeof proc === 'function') {
+                return proc(...args);
+            } else {
+                throw new Error(`'${first}' is not a procedure`);
+            }
+        }
+    };
+
+    const bootstrap = (env) => {
+        const bootstrapCode = `
+        ; length is now tail-recursive with a helper
+        (defun length-aux (l count)
+            (if (null? l)
+              count
+              (length-aux (cdr l) (+ 1 count))))
+        (defun length (l)
+            (length-aux l 0))
+
+        ; append is now tail-recursive with a helper
+        (defun append-aux (l1 l2)
+            (if (null? l1)
+              l2
+              (cons (car l1) (append-aux (cdr l1) l2))))
+        (defun append (l1 l2) (append-aux l1 l2))
+
+        ; reverse is now tail-recursive with an accumulator
+        (defun reverse-aux (l acc)
+            (if (null? l)
+              acc
+              (reverse-aux (cdr l) (cons (car l) acc))))
+        (defun reverse (l)
+            (reverse-aux l '()))
+
+        ; map is now tail-recursive with a helper and an accumulator
+        (defun map-aux (f l acc)
+            (if (null? l)
+              (reverse acc)
+              (map-aux f (cdr l) (cons (f (car l)) acc))))
+        (defun map (f l)
+            (map-aux f l '()))
+
+        ; filter is now tail-recursive with a helper and an accumulator
+        (defun filter-aux (p l acc)
+            (if (null? l)
+              (reverse acc)
+              (if (p (car l))
+                (filter-aux p (cdr l) (cons (car l) acc))
+                (filter-aux p (cdr l) acc))))
+        (defun filter (p l)
+            (filter-aux p l '()))
+            
+        ; New: zip function to combine two lists into a list of pairs
+        (defun zip-aux (l1 l2 acc)
+            (if (or (null? l1) (null? l2))
+              (reverse acc)
+              (zip-aux (cdr l1) (cdr l2) (cons (list (car l1) (car l2)) acc))))
+        (defun zip (l1 l2) (zip-aux l1 l2 '()))
+        
+        ; New: range function to generate a list of numbers from start (inclusive) to end (exclusive)
+        (defun range-aux (start end acc)
+            (if (>= start end)
+                (reverse acc)
+                (range-aux (+ 1 start) end (cons start acc))))
+        (defun range (start end)
+            (range-aux start end '()))
+            
+        ; New: for-each function to apply a procedure to each element in a list
+        (defun for-each (f l)
+            (if (null? l)
+                '()
+                (begin
+                    (f (car l))
+                    (for-each f (cdr l)))))
+
+        ; reduce is already tail-recursive
+        (defun reduce (f init l)
+            (if (null? l)
+              init
+              (reduce f (f init (car l)) (cdr l))))
+              
+        (defun list? (x)
+            (cond
+              ((null? x) #t)
+              ((pair? x) (list? (cdr x)))
+              (else #f)))
+
+        (defun cadr (x) (car (cdr x)))
+        (defun caddr (x) (car (cdr (cdr x))))
+        `;
+
+        try {
+            const tokens = tokenize(bootstrapCode);
+            while (tokens.length > 0) {
+                const expr = readFromTokens(tokens);
+                evalExp(expr, env);
+            }
+        } catch (e) {
+            console.error('Error during bootstrap:', e);
+        }
+    };
+
+    const selfTest = (env, printLine) => {
+        const tests = [
+            // Arithmetic tests
+            ['(+ 1 2 3)', 6, 'Simple addition'],
+            ['(- 10 5)', 5, 'Simple subtraction'],
+            ['(* 2 3 4)', 24, 'Multi-parameter multiplication'],
+            ['(/ 20 4 2)', 2.5, 'Multi-parameter division'],
+            ['(= 10 10)', true, 'eq on numbers'],
+            ['(= #t #t)', true, 'eq on booleans'],
+            ['(equal? "hello" "hello")', true, 'equal? on strings'],
+            
+            // List and logic tests
+            ['(length (list 1 2 3 4 5))', 5, 'length of a list'],
+            ['(equal? (reverse (list 1 2 3)) (list 3 2 1))', true, 'reverse and equal?'],
+            ['(and #t #f #t)', false, 'and short-circuiting'],
+            ['(or #f #f #t)', true, 'or short-circuiting'],
+            ['(null? (list))', true, 'null? on an empty list'],
+            ['(list? (list 1 2))', true, 'list? on a list'],
+            ['(list? 123)', false, 'list? on a number'],
+            // Test Cases for `defun` and `let`
+            ['(defun square (x) (* x x))', null, 'Defines a function `square`'],
+            ['(equal? (square 5) 25)', true, 'Tests the new `square` function'],
+            ['(let ((x 10)) (+ x 5))', 15, 'let with a single binding'],
+            ['(let ((x 10) (y 5)) (+ x y))', 15, 'let with multiple bindings'],
+            
+            // Test Case for `zip`
+            ['(equal? (zip (list 1 2) (list "a" "b")) (list (list 1 "a") (list 2 "b")))', true, 'zip function'],
+
+            // New test cases for `range` and `for-each`
+            ['(equal? (range 1 5) (list 1 2 3 4))', true, 'range function generates a list'],
+            ["(let ((acc '())) (for-each (lambda (x) (set! acc (cons x acc))) (list 1 2 3)) (equal? (reverse acc) (list 1 2 3)))", true, 'for-each with side effects and a `begin` block'],
+
+            // Higher-order function tests
+            ['(equal? (map (lambda (x) (* x x)) (list 1 2 3)) (list 1 4 9))', true, 'map function'],
+            ['(equal? (filter (lambda (x) (> x 2)) (list 1 2 3 4 5)) (list 3 4 5))', true, 'filter function'],
+        ];
+
+        printLine('--- Running self-tests ---', 'subtitle');
+        tests.forEach(([expression, expected, description]) => {
+            let passed = false;
+            try {
+                const result = evalExp(parse(expression), env);
+                if (deepEqual(result, expected) || (result === undefined && expected === null)) {
+                    passed = true;
+                }
+            } catch (e) {
+                // If an error is thrown, the test fails
+            }
+            const status = passed ? '✅ PASS' : '❌ FAIL';
+            printLine(`${status}: ${description}`, passed ? 'prompt' : 'result');
+        });
+        printLine('--- Self-tests complete ---', 'subtitle');
+    };
+
+    const repl = () => {
+        const inputElement = document.getElementById('repl-input');
+        const outputElement = document.getElementById('repl-output');
+        const runButton = document.getElementById('run-btn');
+        const env = standardEnv();
+
+        bootstrap(env);
+        selfTest(env, (text, className) => {
+            const p = document.createElement('div');
+            p.className = className;
+            p.textContent = text;
+            outputElement.appendChild(p);
+            outputElement.scrollTop = outputElement.scrollHeight;
+        });
+
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        const printLine = (text, className = '') => {
+            const p = document.createElement('div');
+            p.className = className;
+            p.textContent = text;
+            outputElement.appendChild(p);
+            outputElement.scrollTop = outputElement.scrollHeight;
+        };
+
+        const handleRun = () => {
+            const program = inputElement.value.trim();
+            if (program === '') return;
+
+            printLine(`> ${program}`, 'prompt');
+            commandHistory.push(program);
+            historyIndex = commandHistory.length;
+
+            try {
+                const ast = parse(program);
+                const result = evalExp(ast, env);
+                printLine(toString(result), 'result');
+            } catch (e) {
+                printLine(`Error: ${e.message}`, 'result');
+            }
+            inputElement.value = '';
+        };
+
+        const handleHistory = (event) => {
+            if (event.key === 'ArrowUp') {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    inputElement.value = commandHistory[historyIndex];
+                    // Keep cursor at the end
+                    setTimeout(() => inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length), 0);
+                }
+            } else if (event.key === 'ArrowDown') {
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    inputElement.value = commandHistory[historyIndex];
+                    setTimeout(() => inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length), 0);
+                } else if (historyIndex === commandHistory.length - 1) {
+                    inputElement.value = '';
+                }
+            }
+        };
+
+        runButton.addEventListener('click', handleRun);
+        inputElement.addEventListener('keydown', handleHistory);
+        
+        printLine('Lisp REPL ready. Start typing expressions above!', 'subtitle');
+    };
+
+    window.onload = function() {
+        repl();
+    };
+</script>
+
+</body>
+</html>
