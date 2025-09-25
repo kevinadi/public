@@ -11,13 +11,13 @@
             background-color: #1a202c;
             padding: 2rem;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            gap: 2rem;
             min-height: 100vh;
         }
         .repl-container {
-            width: 100%;
+            flex: 1;
             max-width: 800px;
+            margin: 0 auto;
             background-color: #2d3748;
             border-radius: 1rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -25,13 +25,65 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            height: calc(100vh - 4rem);
+        }
+        .sidebar {
+            width: 300px;
+            background-color: #2d3748;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 4rem);
+        }
+        .sidebar h3 {
+            color: #f7fafc;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #4a5568;
+            padding-bottom: 0.5rem;
+        }
+        .function-category {
+            margin-bottom: 1.5rem;
+        }
+        .function-category h4 {
+            color: #a0aec0;
+            font-size: 1rem;
+            font-weight: semibold;
+            margin-bottom: 0.5rem;
+        }
+        .function-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .function-list li {
+            color: #d1d5db;
+            font-family: monospace;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.25rem;
+            background-color: #374151;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .function-list li:hover {
+            background-color: #4b5563;
+        }
+        .function-list li.special-form {
+            background-color: #3b4f66;
+        }
+        .function-list li.macro {
+            background-color: #4c3a5b;
         }
         .repl-output {
             background-color: #1f2937;
             color: #d1d5db;
             padding: 1rem;
             border-radius: 0.5rem;
-            height: 400px;
+            flex: 2;
             overflow-y: scroll;
             white-space: pre-wrap;
             font-family: monospace;
@@ -45,6 +97,8 @@
             border: 2px solid #4a5568;
             font-family: monospace;
             resize: none;
+            flex: 1;
+            min-height: 0;
         }
         .repl-input:focus {
             outline: none;
@@ -95,6 +149,112 @@
     </style>
 </head>
 <body>
+
+<div class="sidebar">
+    <h3>Available Functions</h3>
+    
+    <div class="function-category">
+        <h4>Special Forms</h4>
+        <ul class="function-list">
+            <li class="special-form">if</li>
+            <li class="special-form">cond</li>
+            <li class="special-form">define</li>
+            <li class="special-form">let</li>
+            <li class="special-form">quote</li>
+            <li class="special-form">set!</li>
+            <li class="special-form">lambda</li>
+            <li class="special-form">and</li>
+            <li class="special-form">or</li>
+            <li class="special-form">begin</li>
+            <li class="special-form">defmacro</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Macros</h4>
+        <ul class="function-list">
+            <li class="macro">defun</li>
+            <li class="macro">progn</li>
+            <li class="macro">when</li>
+            <li class="macro">unless</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Arithmetic</h4>
+        <ul class="function-list">
+            <li>+</li>
+            <li>-</li>
+            <li>*</li>
+            <li>/</li>
+            <li>abs</li>
+            <li>round</li>
+            <li>max</li>
+            <li>min</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Comparison</h4>
+        <ul class="function-list">
+            <li>=</li>
+            <li>></li>
+            <li><</li>
+            <li>>=</li>
+            <li><=</li>
+            <li>eq</li>
+            <li>equal?</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Lists</h4>
+        <ul class="function-list">
+            <li>car</li>
+            <li>cdr</li>
+            <li>cadr</li>
+            <li>caddr</li>
+            <li>cons</li>
+            <li>list</li>
+            <li>append</li>
+            <li>reverse</li>
+            <li>length</li>
+            <li>map</li>
+            <li>filter</li>
+            <li>reduce</li>
+            <li>zip</li>
+            <li>range</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Predicates</h4>
+        <ul class="function-list">
+            <li>null?</li>
+            <li>pair?</li>
+            <li>list?</li>
+            <li>number?</li>
+            <li>symbol?</li>
+            <li>procedure?</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Logic & Control</h4>
+        <ul class="function-list">
+            <li>not</li>
+            <li>for-each</li>
+            <li>apply</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Utility</h4>
+        <ul class="function-list">
+            <li>error</li>
+        </ul>
+    </div>
+</div>
 
 <div class="repl-container">
     <h1 class="title">Lisp REPL</h1>
@@ -784,6 +944,102 @@
             } else {
                 handleHistory(event);
             }
+        });
+        
+        // Add click handler for sidebar functions
+        document.querySelectorAll('.function-list li').forEach(item => {
+            item.addEventListener('click', () => {
+                const functionName = item.textContent;
+                const currentValue = inputElement.value;
+                
+                // Function templates with parameter placeholders
+                const functionTemplates = {
+                    // Special Forms
+                    'if': '(if test then-expr else-expr)',
+                    'cond': '(cond (test1 result1) (test2 result2) (else default-result))',
+                    'define': '(define symbol value)',
+                    'let': '(let ((var1 val1) (var2 val2)) body)',
+                    'quote': '(quote expression)',
+                    'set!': '(set! symbol new-value)',
+                    'lambda': '(lambda (param1 param2) body)',
+                    'and': '(and expr1 expr2)',
+                    'or': '(or expr1 expr2)',
+                    'begin': '(begin expr1 expr2)',
+                    'defmacro': '(defmacro name (param1 param2) body)',
+                    
+                    // Macros
+                    'defun': '(defun name (param1 param2) body)',
+                    'progn': '(progn expr1 expr2)',
+                    'when': '(when test body)',
+                    'unless': '(unless test body)',
+                    
+                    // Arithmetic
+                    '+': '(+ num1 num2)',
+                    '-': '(- num1 num2)',
+                    '*': '(* num1 num2)',
+                    '/': '(/ num1 num2)',
+                    'abs': '(abs number)',
+                    'round': '(round number)',
+                    'max': '(max num1 num2 num3)',
+                    'min': '(min num1 num2 num3)',
+                    
+                    // Comparison
+                    '=': '(= num1 num2)',
+                    '>': '(> num1 num2)',
+                    '<': '(< num1 num2)',
+                    '>=': '(>= num1 num2)',
+                    '<=': '(<= num1 num2)',
+                    'eq': '(eq obj1 obj2)',
+                    'equal?': '(equal? obj1 obj2)',
+                    
+                    // Lists
+                    'car': '(car list)',
+                    'cdr': '(cdr list)',
+                    'cadr': '(cadr list)',
+                    'caddr': '(caddr list)',
+                    'cons': '(cons item list)',
+                    'list': '(list item1 item2 item3)',
+                    'append': '(append list1 list2)',
+                    'reverse': '(reverse list)',
+                    'length': '(length list)',
+                    'map': '(map function list)',
+                    'filter': '(filter predicate list)',
+                    'reduce': '(reduce function initial-value list)',
+                    'zip': '(zip list1 list2)',
+                    'range': '(range start end step)',
+                    
+                    // Predicates
+                    'null?': '(null? obj)',
+                    'pair?': '(pair? obj)',
+                    'list?': '(list? obj)',
+                    'number?': '(number? obj)',
+                    'symbol?': '(symbol? obj)',
+                    'procedure?': '(procedure? obj)',
+                    
+                    // Logic & Control
+                    'not': '(not expr)',
+                    'for-each': '(for-each function list)',
+                    'apply': '(apply function argument-list)',
+                    
+                    // Utility
+                    'error': '(error "message")'
+                };
+                
+                const template = functionTemplates[functionName] || `(${functionName} )`;
+                
+                // If input is empty, just add the template
+                if (currentValue.trim() === '') {
+                    inputElement.value = template;
+                } else {
+                    // Add a newline and the template
+                    inputElement.value = currentValue + '\n' + template;
+                }
+                
+                // Focus the input and position cursor after opening parenthesis for easy editing
+                inputElement.focus();
+                const openParenPos = inputElement.value.lastIndexOf('(') + functionName.length + 2;
+                inputElement.setSelectionRange(openParenPos, openParenPos);
+            });
         });
         
         printLine('Lisp REPL ready. Start typing expressions above!', 'subtitle');
