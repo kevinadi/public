@@ -269,6 +269,9 @@
             <li class="macro tooltip"><span class="impl-marker lisp"></span>unless
                 <span class="tooltiptext">Executes body only if condition is false<div class="example">(unless (null? lst) (print "not empty"))</div></span>
             </li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>dotimes
+                <span class="tooltiptext">Executes body a specified number of times with loop variable<div class="example">(dotimes (i 5) (print i))</div></span>
+            </li>
         </ul>
     </div>
 
@@ -314,13 +317,13 @@
             <li class="tooltip"><span class="impl-marker lisp"></span>factorial
                 <span class="tooltiptext">Returns the factorial of a number<div class="example">(factorial 5) ; returns 120</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>sum
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>sum
                 <span class="tooltiptext">Sums all elements in a list<div class="example">(sum (list 1 2 3 4)) ; returns 10</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>product
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>product
                 <span class="tooltiptext">Multiplies all elements in a list<div class="example">(product (list 2 3 4)) ; returns 24</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>average
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>average
                 <span class="tooltiptext">Calculates the mean of elements in a list<div class="example">(average (list 2 4 6 8)) ; returns 5</div></span>
             </li>
         </ul>
@@ -416,13 +419,13 @@
             <li class="tooltip"><span class="impl-marker lisp"></span>filter
                 <span class="tooltiptext">Returns elements that satisfy the predicate<div class="example">(filter positive? (list -1 2 -3 4)) ; returns (2 4)</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>reduce
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>reduce
                 <span class="tooltiptext">Combines list elements using a function and initial value<div class="example">(reduce + 0 (list 1 2 3 4)) ; returns 10</div></span>
             </li>
             <li class="tooltip"><span class="impl-marker lisp"></span>zip
                 <span class="tooltiptext">Combines two lists into pairs<div class="example">(zip (list 1 2) (list 'a 'b)) ; returns ((1 a) (2 b))</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>range
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>range
                 <span class="tooltiptext">Generates a list of numbers from start to end<div class="example">(range 1 5) ; returns (1 2 3 4)</div></span>
             </li>
             <li class="tooltip"><span class="impl-marker lisp"></span>find
@@ -470,7 +473,7 @@
             <li class="tooltip"><span class="impl-marker lisp"></span>not
                 <span class="tooltiptext">Logical negation - returns opposite boolean value<div class="example">(not #t) ; returns #f</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>for-each
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>for-each
                 <span class="tooltiptext">Applies function to each list element for side effects<div class="example">(for-each print (list 1 2 3))</div></span>
             </li>
             <li class="tooltip"><span class="impl-marker hardcoded"></span>apply
@@ -683,6 +686,83 @@
                     throw new Error('apply: second argument must be a list');
                 }
                 return func(...args);
+            },
+            'range': (...args) => {
+                let start, end, step = 1;
+                if (args.length === 1) {
+                    start = 0;
+                    end = args[0];
+                } else if (args.length === 2) {
+                    start = args[0];
+                    end = args[1];
+                } else if (args.length === 3) {
+                    start = args[0];
+                    end = args[1];
+                    step = args[2];
+                } else {
+                    throw new Error('range: expects 1, 2, or 3 arguments');
+                }
+                
+                const result = [];
+                if (step > 0) {
+                    for (let i = start; i < end; i += step) {
+                        result.push(i);
+                    }
+                } else if (step < 0) {
+                    for (let i = start; i > end; i += step) {
+                        result.push(i);
+                    }
+                }
+                return result;
+            },
+            'for-each': (func, list) => {
+                if (typeof func !== 'function') {
+                    throw new Error('for-each: first argument must be a procedure');
+                }
+                if (!Array.isArray(list)) {
+                    throw new Error('for-each: second argument must be a list');
+                }
+                
+                for (let i = 0; i < list.length; i++) {
+                    func(list[i]);
+                }
+                return [];
+            },
+            'reduce': (func, init, list) => {
+                if (typeof func !== 'function') {
+                    throw new Error('reduce: first argument must be a procedure');
+                }
+                if (!Array.isArray(list)) {
+                    throw new Error('reduce: third argument must be a list');
+                }
+                
+                let result = init;
+                for (let i = 0; i < list.length; i++) {
+                    result = func(result, list[i]);
+                }
+                return result;
+            },
+            'sum': (list) => {
+                if (!Array.isArray(list)) {
+                    throw new Error('sum: argument must be a list');
+                }
+                return list.reduce((acc, val) => acc + val, 0);
+            },
+            'product': (list) => {
+                if (!Array.isArray(list)) {
+                    throw new Error('product: argument must be a list');
+                }
+                return list.reduce((acc, val) => acc * val, 1);
+            },
+            'average': (list) => {
+                if (!Array.isArray(list)) {
+                    throw new Error('average: argument must be a list');
+                }
+                if (list.length === 0) {
+                    throw new Error('average: cannot compute average of empty list');
+                }
+                const sum = list.reduce((acc, val) => acc + val, 0);
+                return sum / list.length;
             },
         };
         return env;
@@ -983,29 +1063,8 @@
               (reverse acc)
               (zip-aux (cdr l1) (cdr l2) (cons (list (car l1) (car l2)) acc))))
         (defun zip (l1 l2) (zip-aux l1 l2 '()))
-        
-        ; New: range function to generate a list of numbers from start (inclusive) to end (exclusive)
-        (defun range-aux (start end acc incr)
-            (if (>= start end)
-                (reverse acc)
-                (range-aux (+ start incr) end (cons start acc) incr)))
-        (defun range (start end &rest incr-list)
-            (let ((incr (if (null? incr-list) 1 (car incr-list))))
-                (range-aux start end '() incr)))
-            
-        ; New: for-each function to apply a procedure to each element in a list
-        (defun for-each (f l)
-            (if (null? l)
-                '()
-                (begin
-                    (f (car l))
-                    (for-each f (cdr l)))))
 
-        ; reduce is already tail-recursive
-        (defun reduce (f init l)
-            (if (null? l)
-              init
-              (reduce f (f init (car l)) (cdr l))))
+        ; reduce is now implemented in JavaScript (non-recursive)
               
         (defun list? (x)
             (cond
@@ -1138,9 +1197,7 @@
         (defun positive? (n) (> n 0))
         (defun negative? (n) (< n 0))
         (defun zero? (n) (= n 0))
-        (defun sum (l) (reduce + 0 l))
-        (defun product (l) (reduce * 1 l))
-        (defun average (l) (/ (sum l) (length l)))
+        ; sum, product, and average are now implemented in JavaScript (non-recursive)
         
         ; Conditional utilities  
         (defmacro cond* (&rest clauses)
@@ -1215,6 +1272,9 @@
             
             // Test progn macro
             ['(progn 1 2 3 4)', 4, 'Tests `progn` macro - returns last expression'],
+            
+            // Test dotimes macro
+            ['(begin (define total 0) (dotimes (i 5) (set! total (+ total i))) total)', 10, 'Tests `dotimes` macro: sum of 0+1+2+3+4'],
             
             // Test enhanced defun with multiple body expressions
             ['(defun test-multi-body (x) (set! x (+ x 1)) (set! x (* x 2)) x)', null, 'Defines function with multiple body expressions'],
@@ -1291,6 +1351,8 @@
             ['(equal? (flatten (list (list 1 2) 3 (list 4 5))) (list 1 2 3 4 5))', true, 'flatten function'],
             
             // Test statistical functions
+            ['(reduce + 0 (list 1 2 3 4))', 10, 'reduce function test'],
+            ['(reduce * 1 (list 2 3 4))', 24, 'reduce with multiplication test'],
             ['(sum (list 1 2 3 4))', 10, 'sum function'],
             ['(product (list 2 3 4))', 24, 'product function'],
             ['(average (list 2 4 6))', 4, 'average function'],
@@ -1461,6 +1523,7 @@
                     'progn': '(progn expr1 expr2)',
                     'when': '(when test body)',
                     'unless': '(unless test body)',
+                    'dotimes': '(dotimes (var count) body)',
                     
                     // Arithmetic
                     '+': '(+ num1 num2)',
@@ -1496,6 +1559,10 @@
                     'reduce': '(reduce function initial-value list)',
                     'zip': '(zip list1 list2)',
                     'range': '(range start end step)',
+                    'for-each': '(for-each function list)',
+                    'sum': '(sum list)',
+                    'product': '(product list)',
+                    'average': '(average list)',
                     
                     // Predicates
                     'null?': '(null? obj)',
