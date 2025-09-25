@@ -78,6 +78,20 @@
         .function-list li.macro {
             background-color: #4c3a5b;
         }
+        .impl-marker {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            border: 1px solid #9ca3af;
+        }
+        .impl-marker.hardcoded {
+            background-color: #9ca3af;
+        }
+        .impl-marker.lisp {
+            background-color: transparent;
+        }
         .repl-output {
             background-color: #1f2937;
             color: #d1d5db;
@@ -153,147 +167,151 @@
 <div class="sidebar">
     <h3>Available Functions</h3>
     
+    <div class="legend" style="margin-bottom: 1rem; padding: 0.5rem; background-color: #374151; border-radius: 0.25rem; font-size: 0.75rem;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.25rem;">
+            <span class="impl-marker hardcoded" style="margin-right: 6px;"></span>
+            <span style="color: #d1d5db;">Hardcoded (JavaScript)</span>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <span class="impl-marker lisp" style="margin-right: 6px;"></span>
+            <span style="color: #d1d5db;">Implemented in Lisp</span>
+        </div>
+    </div>
+    
     <div class="function-category">
         <h4>Special Forms</h4>
         <ul class="function-list">
-            <li class="special-form">if</li>
-            <li class="special-form">cond</li>
-            <li class="special-form">define</li>
-            <li class="special-form">let</li>
-            <li class="special-form">quote</li>
-            <li class="special-form">set!</li>
-            <li class="special-form">lambda</li>
-            <li class="special-form">and</li>
-            <li class="special-form">or</li>
-            <li class="special-form">begin</li>
-            <li class="special-form">defmacro</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>if</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>cond</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>define</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>let</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>quote</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>set!</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>lambda</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>and</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>or</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>begin</li>
+            <li class="special-form"><span class="impl-marker hardcoded"></span>defmacro</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Macros</h4>
         <ul class="function-list">
-            <li class="macro">defun</li>
-            <li class="macro">progn</li>
-            <li class="macro">when</li>
-            <li class="macro">unless</li>
+            <li class="macro"><span class="impl-marker lisp"></span>defun</li>
+            <li class="macro"><span class="impl-marker lisp"></span>progn</li>
+            <li class="macro"><span class="impl-marker lisp"></span>when</li>
+            <li class="macro"><span class="impl-marker lisp"></span>unless</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Arithmetic</h4>
         <ul class="function-list">
-            <li>+</li>
-            <li>-</li>
-            <li>*</li>
-            <li>/</li>
-            <li>mod</li>
-            <li>abs</li>
-            <li>round</li>
-            <li>max</li>
-            <li>min</li>
-            <li>square</li>
-            <li>cube</li>
-            <li>power</li>
-            <li>factorial</li>
-            <li>sum</li>
-            <li>product</li>
-            <li>average</li>
+            <li><span class="impl-marker hardcoded"></span>+</li>
+            <li><span class="impl-marker hardcoded"></span>-</li>
+            <li><span class="impl-marker hardcoded"></span>*</li>
+            <li><span class="impl-marker hardcoded"></span>/</li>
+            <li><span class="impl-marker hardcoded"></span>mod</li>
+            <li><span class="impl-marker lisp"></span>abs</li>
+            <li><span class="impl-marker hardcoded"></span>round</li>
+            <li><span class="impl-marker lisp"></span>max</li>
+            <li><span class="impl-marker lisp"></span>min</li>
+            <li><span class="impl-marker lisp"></span>square</li>
+            <li><span class="impl-marker lisp"></span>cube</li>
+            <li><span class="impl-marker lisp"></span>power</li>
+            <li><span class="impl-marker lisp"></span>factorial</li>
+            <li><span class="impl-marker lisp"></span>sum</li>
+            <li><span class="impl-marker lisp"></span>product</li>
+            <li><span class="impl-marker lisp"></span>average</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Comparison</h4>
         <ul class="function-list">
-            <li>=</li>
-            <li>></li>
-            <li><</li>
-            <li>>=</li>
-            <li><=</li>
-            <li>eq</li>
-            <li>equal?</li>
+            <li><span class="impl-marker hardcoded"></span>=</li>
+            <li><span class="impl-marker hardcoded"></span>></li>
+            <li><span class="impl-marker hardcoded"></span><</li>
+            <li><span class="impl-marker hardcoded"></span>>=</li>
+            <li><span class="impl-marker hardcoded"></span><=</li>
+            <li><span class="impl-marker hardcoded"></span>eq</li>
+            <li><span class="impl-marker hardcoded"></span>equal?</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Lists</h4>
         <ul class="function-list">
-            <li>car</li>
-            <li>cdr</li>
-            <li>cadr</li>
-            <li>caddr</li>
-            <li>cons</li>
-            <li>list</li>
-            <li>append</li>
-            <li>reverse</li>
-            <li>length</li>
-            <li>first</li>
-            <li>second</li>
-            <li>third</li>
-            <li>last</li>
-            <li>butlast</li>
-            <li>nth</li>
-            <li>take</li>
-            <li>drop</li>
-            <li>flatten</li>
-            <li>map</li>
-            <li>filter</li>
-            <li>reduce</li>
-            <li>zip</li>
-            <li>range</li>
-            <li>find</li>
-            <li>member?</li>
-            <li>position</li>
-            <li>sort</li>
+            <li><span class="impl-marker hardcoded"></span>car</li>
+            <li><span class="impl-marker hardcoded"></span>cdr</li>
+            <li><span class="impl-marker lisp"></span>cadr</li>
+            <li><span class="impl-marker lisp"></span>caddr</li>
+            <li><span class="impl-marker hardcoded"></span>cons</li>
+            <li><span class="impl-marker hardcoded"></span>list</li>
+            <li><span class="impl-marker lisp"></span>append</li>
+            <li><span class="impl-marker lisp"></span>reverse</li>
+            <li><span class="impl-marker lisp"></span>length</li>
+            <li><span class="impl-marker lisp"></span>first</li>
+            <li><span class="impl-marker lisp"></span>second</li>
+            <li><span class="impl-marker lisp"></span>third</li>
+            <li><span class="impl-marker lisp"></span>last</li>
+            <li><span class="impl-marker lisp"></span>butlast</li>
+            <li><span class="impl-marker lisp"></span>nth</li>
+            <li><span class="impl-marker lisp"></span>take</li>
+            <li><span class="impl-marker lisp"></span>drop</li>
+            <li><span class="impl-marker lisp"></span>flatten</li>
+            <li><span class="impl-marker lisp"></span>map</li>
+            <li><span class="impl-marker lisp"></span>filter</li>
+            <li><span class="impl-marker lisp"></span>reduce</li>
+            <li><span class="impl-marker lisp"></span>zip</li>
+            <li><span class="impl-marker lisp"></span>range</li>
+            <li><span class="impl-marker lisp"></span>find</li>
+            <li><span class="impl-marker lisp"></span>member?</li>
+            <li><span class="impl-marker lisp"></span>position</li>
+            <li><span class="impl-marker lisp"></span>sort</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Predicates</h4>
         <ul class="function-list">
-            <li>null?</li>
-            <li>pair?</li>
-            <li>list?</li>
-            <li>number?</li>
-            <li>symbol?</li>
-            <li>procedure?</li>
+            <li><span class="impl-marker hardcoded"></span>null?</li>
+            <li><span class="impl-marker hardcoded"></span>pair?</li>
+            <li><span class="impl-marker lisp"></span>list?</li>
+            <li><span class="impl-marker hardcoded"></span>number?</li>
+            <li><span class="impl-marker hardcoded"></span>symbol?</li>
+            <li><span class="impl-marker hardcoded"></span>procedure?</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Logic & Control</h4>
         <ul class="function-list">
-            <li>not</li>
-            <li>for-each</li>
-            <li>apply</li>
-            <li>identity</li>
-            <li>constantly</li>
-            <li>compose</li>
-            <li>partial</li>
-            <li>juxt</li>
-            <li>complement</li>
-            <li>some</li>
-            <li>every</li>
-            <li>pipe</li>
+            <li><span class="impl-marker lisp"></span>not</li>
+            <li><span class="impl-marker lisp"></span>for-each</li>
+            <li><span class="impl-marker hardcoded"></span>apply</li>
+            <li><span class="impl-marker lisp"></span>identity</li>
+            <li><span class="impl-marker lisp"></span>constantly</li>
+            <li><span class="impl-marker lisp"></span>compose</li>
+            <li><span class="impl-marker lisp"></span>partial</li>
+            <li><span class="impl-marker lisp"></span>complement</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Association Lists</h4>
         <ul class="function-list">
-            <li>make-alist</li>
-            <li>alist-get</li>
-            <li>alist-put</li>
-            <li>alist-remove</li>
-            <li>assoc</li>
-            <li>rassoc</li>
+            <li><span class="impl-marker lisp"></span>assoc</li>
+            <li><span class="impl-marker lisp"></span>alist-get</li>
+            <li><span class="impl-marker lisp"></span>alist-set</li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Utility</h4>
         <ul class="function-list">
-            <li>error</li>
+            <li><span class="impl-marker hardcoded"></span>error</li>
         </ul>
     </div>
 </div>
