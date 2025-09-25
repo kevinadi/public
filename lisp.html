@@ -92,6 +92,43 @@
         .impl-marker.lisp {
             background-color: transparent;
         }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background-color: #1f2937;
+            color: #d1d5db;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px;
+            position: fixed;
+            z-index: 9999;
+            left: 320px;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 5px;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            border: 1px solid #4b5563;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            max-height: 200px;
+            overflow-y: auto;
+            pointer-events: none;
+        }
+        .tooltip .tooltiptext::after {
+            display: none;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+        .tooltiptext .example {
+            color: #fbbf24;
+            font-family: monospace;
+            margin-top: 4px;
+            font-size: 0.7rem;
+        }
         .repl-output {
             background-color: #1f2937;
             color: #d1d5db;
@@ -181,137 +218,303 @@
     <div class="function-category">
         <h4>Special Forms</h4>
         <ul class="function-list">
-            <li class="special-form"><span class="impl-marker hardcoded"></span>if</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>cond</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>define</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>let</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>quote</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>set!</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>lambda</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>and</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>or</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>begin</li>
-            <li class="special-form"><span class="impl-marker hardcoded"></span>defmacro</li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>if
+                <span class="tooltiptext">Conditional expression - evaluates test and returns conseq if true, alt if false<div class="example">(if (> x 0) "positive" "non-positive")</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>cond
+                <span class="tooltiptext">Multi-way conditional - tests conditions in order and evaluates the first matching clause<div class="example">(cond ((< x 0) "negative") ((= x 0) "zero") (else "positive"))</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>define
+                <span class="tooltiptext">Binds a value to a symbol in the global environment<div class="example">(define pi 3.14159)</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>let
+                <span class="tooltiptext">Creates local bindings for variables within a scope<div class="example">(let ((x 5) (y 3)) (+ x y))</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>quote
+                <span class="tooltiptext">Returns the literal expression without evaluating it<div class="example">(quote (+ 1 2)) ; returns (+ 1 2), not 3</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>set!
+                <span class="tooltiptext">Modifies the value of an existing variable<div class="example">(set! x 10)</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>lambda
+                <span class="tooltiptext">Creates an anonymous function with parameters and body<div class="example">(lambda (x y) (+ x y))</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>and
+                <span class="tooltiptext">Logical AND - returns false if any argument is false, otherwise returns the last argument<div class="example">(and (> x 0) (< x 10))</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>or
+                <span class="tooltiptext">Logical OR - returns the first truthy argument, or false if all are false<div class="example">(or (null? x) (= x 0))</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>begin
+                <span class="tooltiptext">Evaluates expressions in sequence and returns the value of the last one<div class="example">(begin (define x 5) (+ x 3))</div></span>
+            </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>defmacro
+                <span class="tooltiptext">Defines a macro that transforms code at evaluation time<div class="example">(defmacro when (test &rest body) (list 'if test (cons 'begin body)))</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Macros</h4>
         <ul class="function-list">
-            <li class="macro"><span class="impl-marker lisp"></span>defun</li>
-            <li class="macro"><span class="impl-marker lisp"></span>progn</li>
-            <li class="macro"><span class="impl-marker lisp"></span>when</li>
-            <li class="macro"><span class="impl-marker lisp"></span>unless</li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>defun
+                <span class="tooltiptext">Defines a named function - syntactic sugar for define + lambda<div class="example">(defun square (x) (* x x))</div></span>
+            </li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>progn
+                <span class="tooltiptext">Evaluates multiple expressions in sequence, like begin<div class="example">(progn (define x 5) (+ x 2))</div></span>
+            </li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>when
+                <span class="tooltiptext">Executes body only if condition is true<div class="example">(when (> x 0) (print "positive") (+ x 1))</div></span>
+            </li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>unless
+                <span class="tooltiptext">Executes body only if condition is false<div class="example">(unless (null? lst) (print "not empty"))</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Arithmetic</h4>
         <ul class="function-list">
-            <li><span class="impl-marker hardcoded"></span>+</li>
-            <li><span class="impl-marker hardcoded"></span>-</li>
-            <li><span class="impl-marker hardcoded"></span>*</li>
-            <li><span class="impl-marker hardcoded"></span>/</li>
-            <li><span class="impl-marker hardcoded"></span>mod</li>
-            <li><span class="impl-marker lisp"></span>abs</li>
-            <li><span class="impl-marker hardcoded"></span>round</li>
-            <li><span class="impl-marker lisp"></span>max</li>
-            <li><span class="impl-marker lisp"></span>min</li>
-            <li><span class="impl-marker lisp"></span>square</li>
-            <li><span class="impl-marker lisp"></span>cube</li>
-            <li><span class="impl-marker lisp"></span>power</li>
-            <li><span class="impl-marker lisp"></span>factorial</li>
-            <li><span class="impl-marker lisp"></span>sum</li>
-            <li><span class="impl-marker lisp"></span>product</li>
-            <li><span class="impl-marker lisp"></span>average</li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>+
+                <span class="tooltiptext">Addition - sums all arguments<div class="example">(+ 1 2 3 4) ; returns 10</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>-
+                <span class="tooltiptext">Subtraction - with one arg negates, with multiple subtracts from first<div class="example">(- 10 3 2) ; returns 5</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>*
+                <span class="tooltiptext">Multiplication - multiplies all arguments<div class="example">(* 2 3 4) ; returns 24</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>/
+                <span class="tooltiptext">Division - divides first argument by subsequent ones<div class="example">(/ 20 4 2) ; returns 2.5</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>mod
+                <span class="tooltiptext">Modulo operation - returns remainder of division<div class="example">(mod 17 5) ; returns 2</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>abs
+                <span class="tooltiptext">Absolute value - returns non-negative value<div class="example">(abs -5) ; returns 5</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>round
+                <span class="tooltiptext">Rounds to nearest integer<div class="example">(round 3.7) ; returns 4</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>max
+                <span class="tooltiptext">Returns the largest of the arguments<div class="example">(max 3 7 2 9 1) ; returns 9</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>min
+                <span class="tooltiptext">Returns the smallest of the arguments<div class="example">(min 3 7 2 9 1) ; returns 1</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>square
+                <span class="tooltiptext">Returns the square of a number<div class="example">(square 5) ; returns 25</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>cube
+                <span class="tooltiptext">Returns the cube of a number<div class="example">(cube 3) ; returns 27</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>power
+                <span class="tooltiptext">Raises base to the power of exponent<div class="example">(power 2 8) ; returns 256</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>factorial
+                <span class="tooltiptext">Returns the factorial of a number<div class="example">(factorial 5) ; returns 120</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>sum
+                <span class="tooltiptext">Sums all elements in a list<div class="example">(sum (list 1 2 3 4)) ; returns 10</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>product
+                <span class="tooltiptext">Multiplies all elements in a list<div class="example">(product (list 2 3 4)) ; returns 24</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>average
+                <span class="tooltiptext">Calculates the mean of elements in a list<div class="example">(average (list 2 4 6 8)) ; returns 5</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Comparison</h4>
         <ul class="function-list">
-            <li><span class="impl-marker hardcoded"></span>=</li>
-            <li><span class="impl-marker hardcoded"></span>></li>
-            <li><span class="impl-marker hardcoded"></span><</li>
-            <li><span class="impl-marker hardcoded"></span>>=</li>
-            <li><span class="impl-marker hardcoded"></span><=</li>
-            <li><span class="impl-marker hardcoded"></span>eq</li>
-            <li><span class="impl-marker hardcoded"></span>equal?</li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>=
+                <span class="tooltiptext">Tests for equality between two values<div class="example">(= 5 5) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>>
+                <span class="tooltiptext">Tests if first argument is greater than second<div class="example">(> 7 3) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span><
+                <span class="tooltiptext">Tests if first argument is less than second<div class="example">(< 3 7) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>>=
+                <span class="tooltiptext">Tests if first argument is greater than or equal to second<div class="example">(>= 7 7) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span><=
+                <span class="tooltiptext">Tests if first argument is less than or equal to second<div class="example">(<= 3 7) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>eq
+                <span class="tooltiptext">Tests for object identity (same as =)<div class="example">(eq 'x 'x) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>equal?
+                <span class="tooltiptext">Tests for structural equality, including nested structures<div class="example">(equal? (list 1 2) (list 1 2)) ; returns #t</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Lists</h4>
         <ul class="function-list">
-            <li><span class="impl-marker hardcoded"></span>car</li>
-            <li><span class="impl-marker hardcoded"></span>cdr</li>
-            <li><span class="impl-marker lisp"></span>cadr</li>
-            <li><span class="impl-marker lisp"></span>caddr</li>
-            <li><span class="impl-marker hardcoded"></span>cons</li>
-            <li><span class="impl-marker hardcoded"></span>list</li>
-            <li><span class="impl-marker lisp"></span>append</li>
-            <li><span class="impl-marker lisp"></span>reverse</li>
-            <li><span class="impl-marker lisp"></span>length</li>
-            <li><span class="impl-marker lisp"></span>first</li>
-            <li><span class="impl-marker lisp"></span>second</li>
-            <li><span class="impl-marker lisp"></span>third</li>
-            <li><span class="impl-marker lisp"></span>last</li>
-            <li><span class="impl-marker lisp"></span>butlast</li>
-            <li><span class="impl-marker lisp"></span>nth</li>
-            <li><span class="impl-marker lisp"></span>take</li>
-            <li><span class="impl-marker lisp"></span>drop</li>
-            <li><span class="impl-marker lisp"></span>flatten</li>
-            <li><span class="impl-marker lisp"></span>map</li>
-            <li><span class="impl-marker lisp"></span>filter</li>
-            <li><span class="impl-marker lisp"></span>reduce</li>
-            <li><span class="impl-marker lisp"></span>zip</li>
-            <li><span class="impl-marker lisp"></span>range</li>
-            <li><span class="impl-marker lisp"></span>find</li>
-            <li><span class="impl-marker lisp"></span>member?</li>
-            <li><span class="impl-marker lisp"></span>position</li>
-            <li><span class="impl-marker lisp"></span>sort</li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>car
+                <span class="tooltiptext">Returns the first element of a list<div class="example">(car (list 1 2 3)) ; returns 1</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>cdr
+                <span class="tooltiptext">Returns all elements except the first<div class="example">(cdr (list 1 2 3)) ; returns (2 3)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>cadr
+                <span class="tooltiptext">Returns the second element of a list (car of cdr)<div class="example">(cadr (list 1 2 3)) ; returns 2</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>caddr
+                <span class="tooltiptext">Returns the third element of a list<div class="example">(caddr (list 1 2 3 4)) ; returns 3</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>cons
+                <span class="tooltiptext">Constructs a list by adding element to front<div class="example">(cons 1 (list 2 3)) ; returns (1 2 3)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>list
+                <span class="tooltiptext">Creates a list from its arguments<div class="example">(list 1 2 3 4) ; returns (1 2 3 4)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>append
+                <span class="tooltiptext">Concatenates two lists<div class="example">(append (list 1 2) (list 3 4)) ; returns (1 2 3 4)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>reverse
+                <span class="tooltiptext">Reverses the order of elements in a list<div class="example">(reverse (list 1 2 3)) ; returns (3 2 1)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>length
+                <span class="tooltiptext">Returns the number of elements in a list<div class="example">(length (list 1 2 3 4)) ; returns 4</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>first
+                <span class="tooltiptext">Returns the first element (same as car)<div class="example">(first (list 1 2 3)) ; returns 1</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>second
+                <span class="tooltiptext">Returns the second element<div class="example">(second (list 1 2 3)) ; returns 2</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>third
+                <span class="tooltiptext">Returns the third element<div class="example">(third (list 1 2 3)) ; returns 3</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>last
+                <span class="tooltiptext">Returns the last element of a list<div class="example">(last (list 1 2 3 4)) ; returns 4</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>butlast
+                <span class="tooltiptext">Returns all elements except the last<div class="example">(butlast (list 1 2 3 4)) ; returns (1 2 3)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>nth
+                <span class="tooltiptext">Returns the element at the specified index (0-based)<div class="example">(nth 2 (list 10 20 30 40)) ; returns 30</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>take
+                <span class="tooltiptext">Returns the first n elements of a list<div class="example">(take 3 (list 1 2 3 4 5)) ; returns (1 2 3)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>drop
+                <span class="tooltiptext">Returns the list with first n elements removed<div class="example">(drop 2 (list 1 2 3 4 5)) ; returns (3 4 5)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>flatten
+                <span class="tooltiptext">Flattens nested lists into a single list<div class="example">(flatten (list 1 (list 2 3) 4)) ; returns (1 2 3 4)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>map
+                <span class="tooltiptext">Applies function to each element, returns new list<div class="example">(map square (list 1 2 3)) ; returns (1 4 9)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>filter
+                <span class="tooltiptext">Returns elements that satisfy the predicate<div class="example">(filter positive? (list -1 2 -3 4)) ; returns (2 4)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>reduce
+                <span class="tooltiptext">Combines list elements using a function and initial value<div class="example">(reduce + 0 (list 1 2 3 4)) ; returns 10</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>zip
+                <span class="tooltiptext">Combines two lists into pairs<div class="example">(zip (list 1 2) (list 'a 'b)) ; returns ((1 a) (2 b))</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>range
+                <span class="tooltiptext">Generates a list of numbers from start to end<div class="example">(range 1 5) ; returns (1 2 3 4)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>find
+                <span class="tooltiptext">Returns first element satisfying predicate<div class="example">(find positive? (list -1 2 3)) ; returns 2</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>member?
+                <span class="tooltiptext">Tests if element is in the list<div class="example">(member? 3 (list 1 2 3 4)) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>position
+                <span class="tooltiptext">Returns the index of element in list<div class="example">(position 'c (list 'a 'b 'c 'd)) ; returns 2</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>sort
+                <span class="tooltiptext">Sorts list using comparison function<div class="example">(sort (list 3 1 4 2) <) ; returns (1 2 3 4)</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Predicates</h4>
         <ul class="function-list">
-            <li><span class="impl-marker hardcoded"></span>null?</li>
-            <li><span class="impl-marker hardcoded"></span>pair?</li>
-            <li><span class="impl-marker lisp"></span>list?</li>
-            <li><span class="impl-marker hardcoded"></span>number?</li>
-            <li><span class="impl-marker hardcoded"></span>symbol?</li>
-            <li><span class="impl-marker hardcoded"></span>procedure?</li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>null?
+                <span class="tooltiptext">Tests if list is empty<div class="example">(null? (list)) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>pair?
+                <span class="tooltiptext">Tests if value is a non-empty list<div class="example">(pair? (list 1 2)) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>list?
+                <span class="tooltiptext">Tests if value is a proper list<div class="example">(list? (list 1 2 3)) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>number?
+                <span class="tooltiptext">Tests if value is a number<div class="example">(number? 42) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>symbol?
+                <span class="tooltiptext">Tests if value is a symbol<div class="example">(symbol? 'hello) ; returns #t</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>procedure?
+                <span class="tooltiptext">Tests if value is a function<div class="example">(procedure? +) ; returns #t</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Logic & Control</h4>
         <ul class="function-list">
-            <li><span class="impl-marker lisp"></span>not</li>
-            <li><span class="impl-marker lisp"></span>for-each</li>
-            <li><span class="impl-marker hardcoded"></span>apply</li>
-            <li><span class="impl-marker lisp"></span>identity</li>
-            <li><span class="impl-marker lisp"></span>constantly</li>
-            <li><span class="impl-marker lisp"></span>compose</li>
-            <li><span class="impl-marker lisp"></span>partial</li>
-            <li><span class="impl-marker lisp"></span>complement</li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>not
+                <span class="tooltiptext">Logical negation - returns opposite boolean value<div class="example">(not #t) ; returns #f</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>for-each
+                <span class="tooltiptext">Applies function to each list element for side effects<div class="example">(for-each print (list 1 2 3))</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>apply
+                <span class="tooltiptext">Calls function with list of arguments<div class="example">(apply + (list 1 2 3 4)) ; returns 10</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>identity
+                <span class="tooltiptext">Returns its argument unchanged<div class="example">(identity 42) ; returns 42</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>constantly
+                <span class="tooltiptext">Returns a function that always returns the same value<div class="example">((constantly 5) 1 2 3) ; returns 5</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>compose
+                <span class="tooltiptext">Creates function composition - applies functions right to left<div class="example">((compose square abs) -3) ; returns 9</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>partial
+                <span class="tooltiptext">Partially applies function with some arguments<div class="example">((partial + 10) 5) ; returns 15</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>complement
+                <span class="tooltiptext">Returns function that gives opposite boolean result<div class="example">((complement positive?) -5) ; returns #t</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Association Lists</h4>
         <ul class="function-list">
-            <li><span class="impl-marker lisp"></span>assoc</li>
-            <li><span class="impl-marker lisp"></span>alist-get</li>
-            <li><span class="impl-marker lisp"></span>alist-set</li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>assoc
+                <span class="tooltiptext">Finds key-value pair in association list<div class="example">(assoc 'b '((a 1) (b 2) (c 3))) ; returns (b 2)</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>alist-get
+                <span class="tooltiptext">Gets value for key from association list<div class="example">(alist-get 'b '((a 1) (b 2))) ; returns 2</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker lisp"></span>alist-set
+                <span class="tooltiptext">Adds or updates key-value pair in association list<div class="example">(alist-set 'x 10 '((a 1))) ; returns ((x 10) (a 1))</div></span>
+            </li>
         </ul>
     </div>
 
     <div class="function-category">
         <h4>Utility</h4>
         <ul class="function-list">
-            <li><span class="impl-marker hardcoded"></span>error</li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>error
+                <span class="tooltiptext">Throws an error with the given message<div class="example">(error "Something went wrong!")</div></span>
+            </li>
         </ul>
     </div>
 </div>
@@ -1221,8 +1424,21 @@
         
         // Add click handler for sidebar functions
         document.querySelectorAll('.function-list li').forEach(item => {
-            item.addEventListener('click', () => {
-                const functionName = item.textContent;
+            item.addEventListener('click', (e) => {
+                // Prevent tooltip from interfering
+                if (e.target.classList.contains('tooltiptext') || e.target.closest('.tooltiptext')) {
+                    return;
+                }
+                
+                // Extract function name - it's the text content after the marker span
+                let functionName = '';
+                for (let node of item.childNodes) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        functionName = node.textContent.trim();
+                        break;
+                    }
+                }
+                
                 const currentValue = inputElement.value;
                 
                 // Function templates with parameter placeholders
@@ -1312,6 +1528,40 @@
                 inputElement.focus();
                 const openParenPos = inputElement.value.lastIndexOf('(') + functionName.length + 2;
                 inputElement.setSelectionRange(openParenPos, openParenPos);
+            });
+        });
+        
+        // Dynamic tooltip positioning
+        const tooltips = document.querySelectorAll('.tooltip');
+        tooltips.forEach(tooltip => {
+            const tooltipText = tooltip.querySelector('.tooltiptext');
+            
+            tooltip.addEventListener('mouseenter', function(e) {
+                const rect = e.target.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                // Position tooltip to the right of the sidebar
+                let left = rect.right + 10;
+                let top = rect.top;
+                
+                // Adjust if tooltip would go off screen
+                if (left + 300 > viewportWidth) {
+                    left = viewportWidth - 320; // 300px width + 20px margin
+                }
+                
+                // Adjust vertical position if needed
+                if (top + 100 > viewportHeight) {
+                    top = viewportHeight - 120;
+                }
+                
+                if (top < 0) {
+                    top = 10;
+                }
+                
+                tooltipText.style.left = left + 'px';
+                tooltipText.style.top = top + 'px';
+                tooltipText.style.transform = 'none';
             });
         });
         
