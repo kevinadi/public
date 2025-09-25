@@ -187,10 +187,18 @@
             <li>-</li>
             <li>*</li>
             <li>/</li>
+            <li>mod</li>
             <li>abs</li>
             <li>round</li>
             <li>max</li>
             <li>min</li>
+            <li>square</li>
+            <li>cube</li>
+            <li>power</li>
+            <li>factorial</li>
+            <li>sum</li>
+            <li>product</li>
+            <li>average</li>
         </ul>
     </div>
 
@@ -219,11 +227,24 @@
             <li>append</li>
             <li>reverse</li>
             <li>length</li>
+            <li>first</li>
+            <li>second</li>
+            <li>third</li>
+            <li>last</li>
+            <li>butlast</li>
+            <li>nth</li>
+            <li>take</li>
+            <li>drop</li>
+            <li>flatten</li>
             <li>map</li>
             <li>filter</li>
             <li>reduce</li>
             <li>zip</li>
             <li>range</li>
+            <li>find</li>
+            <li>member?</li>
+            <li>position</li>
+            <li>sort</li>
         </ul>
     </div>
 
@@ -245,6 +266,27 @@
             <li>not</li>
             <li>for-each</li>
             <li>apply</li>
+            <li>identity</li>
+            <li>constantly</li>
+            <li>compose</li>
+            <li>partial</li>
+            <li>juxt</li>
+            <li>complement</li>
+            <li>some</li>
+            <li>every</li>
+            <li>pipe</li>
+        </ul>
+    </div>
+
+    <div class="function-category">
+        <h4>Association Lists</h4>
+        <ul class="function-list">
+            <li>make-alist</li>
+            <li>alist-get</li>
+            <li>alist-put</li>
+            <li>alist-remove</li>
+            <li>assoc</li>
+            <li>rassoc</li>
         </ul>
     </div>
 
@@ -392,6 +434,7 @@
             '-': (...args) => args.length === 1 ? -args[0] : args.slice(1).reduce((a, b) => a - b, args[0]),
             '*': (...args) => args.reduce((a, b) => a * b, 1),
             '/': (...args) => args.slice(1).reduce((a, b) => a / b, args[0]),
+            'mod': (a, b) => a % b,
             '>': (a, b) => a > b,
             '<': (a, b) => a < b,
             '>=': (a, b) => a >= b,
@@ -751,6 +794,153 @@
 
         (defun cadr (x) (car (cdr x)))
         (defun caddr (x) (car (cdr (cdr x))))
+        
+        ; Additional utility functions for real-world use
+        
+        ; String functions (working with string literals)
+        (defun string-length (s) (length (cons 'dummy s))) ; Placeholder - would need JS implementation
+        
+        ; Mathematical functions
+        (defun square (x) (* x x))
+        (defun cube (x) (* x x x))
+        (defun power (base exp)
+            (if (= exp 0)
+                1
+                (if (= exp 1)
+                    base
+                    (* base (power base (- exp 1))))))
+        (defun factorial (n)
+            (if (<= n 1)
+                1
+                (* n (factorial (- n 1)))))
+        
+        ; List utilities
+        (defun first (l) (car l))
+        (defun second (l) (cadr l))
+        (defun third (l) (caddr l))
+        (defun last (l)
+            (if (null? (cdr l))
+                (car l)
+                (last (cdr l))))
+        (defun butlast (l)
+            (if (null? (cdr l))
+                '()
+                (cons (car l) (butlast (cdr l)))))
+        (defun nth (n l)
+            (if (or (null? l) (< n 0))
+                #f
+                (if (= n 0)
+                    (car l)
+                    (nth (- n 1) (cdr l)))))
+        
+        ; List predicates
+        (defun empty? (l) (null? l))
+        (defun single? (l) (and (pair? l) (null? (cdr l))))
+        
+        ; List transformations
+        (defun take (n l)
+            (if (or (= n 0) (null? l))
+                '()
+                (cons (car l) (take (- n 1) (cdr l)))))
+        (defun drop (n l)
+            (if (or (= n 0) (null? l))
+                l
+                (drop (- n 1) (cdr l))))
+        (defun flatten-aux (l acc)
+            (if (null? l)
+                (reverse acc)
+                (if (list? (car l))
+                    (flatten-aux (cdr l) (append (reverse (flatten (car l))) acc))
+                    (flatten-aux (cdr l) (cons (car l) acc)))))
+        (defun flatten (l) (flatten-aux l '()))
+        
+        ; Higher-order functions
+        (defun compose (f g) (lambda (x) (f (g x))))
+        (defun partial (f &rest args) (lambda (&rest more-args) (apply f (append args more-args))))
+        (defun curry (f) (lambda (x) (lambda (y) (f x y))))
+        
+        ; Functional programming utilities
+        (defun identity (x) x)
+        (defun constantly (x) (lambda (&rest args) x))
+        (defun complement (f) (lambda (&rest args) (not (apply f args))))
+        
+        ; List searching and finding
+        (defun find (predicate l)
+            (if (null? l)
+                #f
+                (if (predicate (car l))
+                    (car l)
+                    (find predicate (cdr l)))))
+        (defun member? (item l)
+            (if (null? l)
+                #f
+                (if (equal? item (car l))
+                    #t
+                    (member? item (cdr l)))))
+        (defun position (item l)
+            (define pos-aux (lambda (item l index)
+                (if (null? l)
+                    #f
+                    (if (equal? item (car l))
+                        index
+                        (pos-aux item (cdr l) (+ index 1))))))
+            (pos-aux item l 0))
+        
+        ; Association lists (key-value pairs)
+        (defun assoc (key alist)
+            (if (null? alist)
+                #f
+                (if (equal? key (car (car alist)))
+                    (car alist)
+                    (assoc key (cdr alist)))))
+        (defun alist-get (key alist)
+            (let ((pair (assoc key alist)))
+                (if pair (car (cdr pair)) #f)))
+        (defun alist-set (key value alist)
+            (cons (list key value) alist))
+        
+        ; Sorting (simple insertion sort)
+        (defun insert-sorted (item l compare)
+            (if (null? l)
+                (list item)
+                (if (compare item (car l))
+                    (cons item l)
+                    (cons (car l) (insert-sorted item (cdr l) compare)))))
+        (defun sort (l compare)
+            (if (null? l)
+                '()
+                (insert-sorted (car l) (sort (cdr l) compare) compare)))
+        
+        ; Numeric utilities
+        (defun even? (n) (= (mod n 2) 0))
+        (defun odd? (n) (= (mod n 2) 1))
+        (defun positive? (n) (> n 0))
+        (defun negative? (n) (< n 0))
+        (defun zero? (n) (= n 0))
+        (defun sum (l) (reduce + 0 l))
+        (defun product (l) (reduce * 1 l))
+        (defun average (l) (/ (sum l) (length l)))
+        
+        ; Conditional utilities  
+        (defmacro cond* (&rest clauses)
+            (if (null? clauses)
+                #f
+                (let ((clause (car clauses)))
+                    (if (equal? (car clause) 'else)
+                        (cadr clause)
+                        (list 'if (car clause) (cadr clause) (cons 'cond* (cdr clauses)))))))
+        
+        ; Loop-like constructs
+        (defmacro dotimes (binding &rest body)
+            (let ((var (car binding)) (times (cadr binding)))
+                (list 'for-each (cons 'lambda (cons (list var) body)) (list 'range 0 times))))
+        
+        ; Let variations
+        (defmacro let* (bindings &rest body)
+            (if (null? bindings)
+                (cons 'begin body)
+                (list 'let (list (car bindings)) 
+                      (cons 'let* (cons (cdr bindings) body)))))
         `;
 
         try {
@@ -842,6 +1032,71 @@
             ['(max 42)', 42, 'max function with single argument'],
             ['(min 42)', 42, 'min function with single argument'],
             ['(apply + (range 1 6))', 15, 'apply with range: sum of 1+2+3+4+5'],
+            
+            // Test newly added mathematical functions
+            ['(square 5)', 25, 'square function'],
+            ['(cube 3)', 27, 'cube function'],
+            ['(power 2 3)', 8, 'power function'],
+            ['(power 5 0)', 1, 'power function with exponent 0'],
+            ['(factorial 4)', 24, 'factorial function'],
+            ['(factorial 0)', 1, 'factorial of 0'],
+            
+            // Test numeric predicates
+            ['(even? 4)', true, 'even? predicate with even number'],
+            ['(even? 3)', false, 'even? predicate with odd number'],
+            ['(odd? 3)', true, 'odd? predicate with odd number'],
+            ['(odd? 4)', false, 'odd? predicate with even number'],
+            ['(positive? 5)', true, 'positive? predicate'],
+            ['(negative? -3)', true, 'negative? predicate'],
+            ['(zero? 0)', true, 'zero? predicate'],
+            
+            // Test list accessors
+            ['(first (list 1 2 3))', 1, 'first function'],
+            ['(second (list 1 2 3))', 2, 'second function'],
+            ['(third (list 1 2 3 4))', 3, 'third function'],
+            ['(last (list 1 2 3 4))', 4, 'last function'],
+            ['(equal? (butlast (list 1 2 3 4)) (list 1 2 3))', true, 'butlast function'],
+            ['(nth 2 (list 1 2 3 4))', 3, 'nth function'],
+            
+            // Test list predicates
+            ['(empty? (list))', true, 'empty? predicate with empty list'],
+            ['(empty? (list 1))', false, 'empty? predicate with non-empty list'],
+            ['(single? (list 42))', true, 'single? predicate with single item'],
+            ['(single? (list 1 2))', false, 'single? predicate with multiple items'],
+            
+            // Test list transformations
+            ['(equal? (take 2 (list 1 2 3 4)) (list 1 2))', true, 'take function'],
+            ['(equal? (drop 2 (list 1 2 3 4)) (list 3 4))', true, 'drop function'],
+            ['(equal? (flatten (list (list 1 2) 3 (list 4 5))) (list 1 2 3 4 5))', true, 'flatten function'],
+            
+            // Test statistical functions
+            ['(sum (list 1 2 3 4))', 10, 'sum function'],
+            ['(product (list 2 3 4))', 24, 'product function'],
+            ['(average (list 2 4 6))', 4, 'average function'],
+            
+            // Test higher-order functions
+            ['((compose abs -) 5)', 5, 'compose function: abs of negation'],
+            ['(((curry +) 10) 5)', 15, 'curry function'],
+            ['((partial + 10 20) 5)', 35, 'partial function'],
+            ['(identity 42)', 42, 'identity function'],
+            ['((constantly 42) 1 2 3)', 42, 'constantly function'],
+            ['((complement null?) (list 1 2))', true, 'complement function'],
+            
+            // Test list searching
+            ['(find (lambda (x) (> x 3)) (list 1 2 4 5))', 4, 'find function'],
+            ['(member? 3 (list 1 2 3 4))', true, 'member? function - found'],
+            ['(member? 5 (list 1 2 3 4))', false, 'member? function - not found'],
+            ['(position 3 (list 1 2 3 4))', 2, 'position function'],
+            ['(position 99 (list 1 2 3 4))', false, 'position function - not found'],
+            
+            // Test association lists
+            ['(equal? (assoc "name" (list (list "name" "John") (list "age" 30))) (list "name" "John"))', true, 'assoc function'],
+            ['(alist-get "name" (list (list "name" 42) (list "age" 30)))', 42, 'alist-get function'],
+            ['(equal? (alist-set "city" "NYC" (list (list "name" "Bob"))) (list (list "city" "NYC") (list "name" "Bob")))', true, 'alist-set function'],
+            
+            // Test sorting
+            ['(equal? (sort (list 3 1 4 2) <) (list 1 2 3 4))', true, 'sort function with < comparator'],
+            ['(equal? (sort (list 3 1 4 2) >) (list 4 3 2 1))', true, 'sort function with > comparator'],
         ];
 
         printLine('--- Running self-tests ---', 'subtitle');
