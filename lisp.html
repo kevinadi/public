@@ -295,8 +295,16 @@
         env.find(symbol)[symbol] = evalExp(exp, env);
       },
       'lambda': (x, env) => {
-        const [parms, body] = x.slice(1);
-        return (...args) => evalExp(body, new Env(parms, args, env));
+        const [parms, ...body] = x.slice(1);
+        return (...args) => {
+          const lambdaEnv = new Env(parms, args, env);
+          // Handle multiple body expressions - evaluate all but return the last
+          let result;
+          for (const expr of body) {
+            result = evalExp(expr, lambdaEnv);
+          }
+          return result;
+        };
       },
       'and': (x, env) => {
         let result = true;
@@ -330,8 +338,48 @@
       'defmacro': (x, env) => {
         const [name, params, body] = x.slice(1);
         const macro = (...args) => {
+          // Handle &rest parameters
+          let macroParams = [];
+          let macroArgs = [];
+          let restIndex = -1;
+          
+          // Find &rest parameter if it exists
+          for (let i = 0; i < params.length; i++) {
+            if (params[i] === '&rest') {
+              restIndex = i;
+              break;
+            }
+          }
+          
+          if (restIndex !== -1) {
+            // Handle &rest parameters
+            if (restIndex + 1 >= params.length) {
+              throw new Error('&rest must be followed by a parameter name');
+            }
+            
+            // Regular parameters before &rest
+            macroParams = params.slice(0, restIndex);
+            macroArgs = args.slice(0, restIndex);
+            
+            // Rest parameter gets remaining arguments as a list
+            const restParam = params[restIndex + 1];
+            const restArgs = args.slice(restIndex);
+            
+            macroParams.push(restParam);
+            macroArgs.push(restArgs);
+            
+            // Check if there are parameters after &rest (which is an error)
+            if (restIndex + 2 < params.length) {
+              throw new Error('&rest parameter must be the last parameter');
+            }
+          } else {
+            // No &rest, use parameters as-is
+            macroParams = params;
+            macroArgs = args;
+          }
+          
           // Create a new environment with macro parameters bound to arguments
-          const macroEnv = new Env(params, args, env);
+          const macroEnv = new Env(macroParams, macroArgs, env);
           // Evaluate the macro body to get the expanded form
           const expanded = evalExp(body, macroEnv);
           // Evaluate the expanded form in the original environment
@@ -384,9 +432,21 @@
 
     const bootstrap = (env) => {
         const bootstrapCode = `
-        ; defun implemented as a macro
-        (defmacro defun (name params body)
-            (list 'define name (list 'lambda params body)))
+        ; defun implemented as a macro with &rest support for multiple body expressions
+        (defmacro defun (name params &rest body)
+            (list 'define name (cons 'lambda (cons params body))))
+        
+        ; progn macro - evaluate multiple expressions and return the last one
+        (defmacro progn (&rest expressions)
+            (cons 'begin expressions))
+        
+        ; when macro with &rest support for multiple body expressions
+        (defmacro when (test &rest body)
+            (list 'if test (cons 'begin body)))
+        
+        ; unless macro with &rest support for multiple body expressions  
+        (defmacro unless (test &rest body)
+            (list 'if (list 'not test) (cons 'begin body)))
 
         ; length is now tail-recursive with a helper
         (defun length-aux (l count)
@@ -504,17 +564,29 @@
             ['(let ((x 10)) (+ x 5))', 15, 'let with a single binding'],
             ['(let ((x 10) (y 5)) (+ x y))', 15, 'let with multiple bindings'],
             
-            // Test Cases for macros and defmacro
-            ['(defmacro when (test body) (list (quote if) test body))', null, 'Defines a macro `when`'],
-            ['(when #t 42)', 42, 'Tests the new `when` macro with true condition'],
-            ['(when #f 42)', null, 'Tests the new `when` macro with false condition'],
-            ['(defmacro unless (test body) (list (quote if) (list (quote not) test) body))', null, 'Defines a macro `unless`'],
-            ['(unless #f 99)', 99, 'Tests the new `unless` macro with false condition'],
-            ['(unless #t 99)', null, 'Tests the new `unless` macro with true condition'],
+            // Test Cases for macros and defmacro with &rest support
+            ['(defmacro simple-when (test body) (list (quote if) test body))', null, 'Defines a simple macro `simple-when`'],
+            ['(simple-when #t 42)', 42, 'Tests the simple `when` macro with true condition'],
+            ['(simple-when #f 42)', null, 'Tests the simple `when` macro with false condition'],
+            
+            // Test &rest parameter support in macros
+            ['(defmacro list-maker (&rest args) (cons (quote list) args))', null, 'Defines macro with &rest parameter'],
+            ['(equal? (list-maker 1 2 3 4) (list 1 2 3 4))', true, 'Tests macro with &rest parameter'],
+            
+            // Test enhanced when/unless with multiple body expressions
+            ['(when #t 1 2 3)', 3, 'Tests enhanced `when` macro with multiple body expressions'],
+            ['(unless #f 10 20 30)', 30, 'Tests enhanced `unless` macro with multiple body expressions'],
+            
+            // Test progn macro
+            ['(progn 1 2 3 4)', 4, 'Tests `progn` macro - returns last expression'],
+            
+            // Test enhanced defun with multiple body expressions
+            ['(defun test-multi-body (x) (set! x (+ x 1)) (set! x (* x 2)) x)', null, 'Defines function with multiple body expressions'],
+            ['(test-multi-body 5)', 12, 'Tests function with multiple body expressions: (5+1)*2=12'],
             
             // Test that defun is really a macro (it should expand to define + lambda)
-            ['(defun factorial (n) (if (= n 0) 1 (* n (factorial (- n 1)))))', null, 'Defines factorial function via defun macro'],
-            ['(factorial 5)', 120, 'Tests factorial function defined via defun macro'],
+            ['(defun factorial (n) (if (= n 0) 1 (* n (factorial (- n 1)))))', null, 'Defines factorial function via enhanced defun macro'],
+            ['(factorial 5)', 120, 'Tests factorial function defined via enhanced defun macro'],
             
             // Test Case for `zip`
             ['(equal? (zip (list 1 2) (list "a" "b")) (list (list 1 "a") (list 2 "b")))', true, 'zip function'],
