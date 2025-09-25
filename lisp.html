@@ -1428,6 +1428,7 @@
 
         let commandHistory = [];
         let historyIndex = -1;
+        let inHistoryMode = false; // Track if we're navigating history
 
         const printLine = (text, className = '') => {
             const p = document.createElement('div');
@@ -1444,6 +1445,7 @@
             printLine(`> ${program}`, 'prompt');
             commandHistory.push(program);
             historyIndex = commandHistory.length;
+            inHistoryMode = false; // Exit history mode after running command
 
             try {
                 const ast = parse(program);
@@ -1456,31 +1458,57 @@
         };
 
         const handleHistory = (event) => {
-            if (event.key === 'ArrowUp') {
-                if (historyIndex > 0) {
-                    historyIndex--;
-                    inputElement.value = commandHistory[historyIndex];
-                    // Keep cursor at the end
-                    setTimeout(() => inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length), 0);
-                }
-            } else if (event.key === 'ArrowDown') {
-                if (historyIndex < commandHistory.length - 1) {
-                    historyIndex++;
-                    inputElement.value = commandHistory[historyIndex];
-                    setTimeout(() => inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length), 0);
-                } else if (historyIndex === commandHistory.length - 1) {
-                    inputElement.value = '';
+            // Start history navigation if input is empty OR continue if already in history mode
+            if (inputElement.value.trim() === '' || inHistoryMode) {
+                if (event.key === 'ArrowUp') {
+                    if (historyIndex > 0) {
+                        event.preventDefault(); // Prevent default cursor movement
+                        historyIndex--;
+                        inputElement.value = commandHistory[historyIndex];
+                        inHistoryMode = true; // Now in history navigation mode
+                        // Keep cursor at the end
+                        setTimeout(() => inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length), 0);
+                    }
+                } else if (event.key === 'ArrowDown') {
+                    if (historyIndex < commandHistory.length - 1) {
+                        event.preventDefault(); // Prevent default cursor movement
+                        historyIndex++;
+                        inputElement.value = commandHistory[historyIndex];
+                        inHistoryMode = true; // Stay in history navigation mode
+                        setTimeout(() => inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length), 0);
+                    } else if (historyIndex === commandHistory.length - 1) {
+                        event.preventDefault(); // Prevent default cursor movement
+                        historyIndex++;
+                        inputElement.value = '';
+                        inHistoryMode = false; // Exit history mode when we clear input
+                    }
                 }
             }
+            // If not in history mode and input has text, let browser handle normal arrow key navigation
         };
 
         runButton.addEventListener('click', handleRun);
         inputElement.addEventListener('keydown', (event) => {
+            // If in history mode and user presses any key except arrows, exit history mode
+            if (inHistoryMode && !['ArrowUp', 'ArrowDown'].includes(event.key)) {
+                // Don't exit on modifier keys or special keys that don't change content
+                if (!['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape'].includes(event.key)) {
+                    inHistoryMode = false;
+                }
+            }
+            
             if (event.ctrlKey && event.key === 'Enter') {
                 event.preventDefault();
                 handleRun();
             } else {
                 handleHistory(event);
+            }
+        });
+        
+        // Exit history mode when user starts typing
+        inputElement.addEventListener('input', () => {
+            if (inHistoryMode) {
+                inHistoryMode = false; // Exit history mode when user modifies text
             }
         });
         
