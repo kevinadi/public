@@ -685,12 +685,16 @@
         ];
 
         printLine('--- Running self-tests ---', 'subtitle');
+        let passedCount = 0;
+        let totalCount = tests.length;
+        
         tests.forEach(([expression, expected, description]) => {
             let passed = false;
             try {
                 const result = evalExp(parse(expression), env);
                 if (deepEqual(result, expected) || (result === undefined && expected === null)) {
                     passed = true;
+                    passedCount++;
                 }
             } catch (e) {
                 // If an error is thrown, the test fails
@@ -698,6 +702,14 @@
             const status = passed ? '✅ PASS' : '❌ FAIL';
             printLine(`${status}: ${description}`, passed ? 'prompt' : 'result');
         });
+        
+        // Print summary
+        const failedCount = totalCount - passedCount;
+        if (failedCount === 0) {
+            printLine(`🎉 All ${totalCount} tests passed!`, 'prompt');
+        } else {
+            printLine(`⚠️  ${failedCount} of ${totalCount} tests failed (${passedCount} passed)`, 'result');
+        }
         printLine('--- Self-tests complete ---', 'subtitle');
     };
 
