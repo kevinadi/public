@@ -561,12 +561,13 @@
         (defun zip (l1 l2) (zip-aux l1 l2 '()))
         
         ; New: range function to generate a list of numbers from start (inclusive) to end (exclusive)
-        (defun range-aux (start end acc)
+        (defun range-aux (start end acc incr)
             (if (>= start end)
                 (reverse acc)
-                (range-aux (+ 1 start) end (cons start acc))))
-        (defun range (start end)
-            (range-aux start end '()))
+                (range-aux (+ start incr) end (cons start acc) incr)))
+        (defun range (start end &rest incr-list)
+            (let ((incr (if (null? incr-list) 1 (car incr-list))))
+                (range-aux start end '() incr)))
             
         ; New: for-each function to apply a procedure to each element in a list
         (defun for-each (f l)
@@ -656,7 +657,10 @@
             ['(equal? (zip (list 1 2) (list "a" "b")) (list (list 1 "a") (list 2 "b")))', true, 'zip function'],
 
             // New test cases for `range` and `for-each`
-            ['(equal? (range 1 5) (list 1 2 3 4))', true, 'range function generates a list'],
+            ['(equal? (range 1 5) (list 1 2 3 4))', true, 'range function generates a list with default increment'],
+            ['(equal? (range 1 10 2) (list 1 3 5 7 9))', true, 'range function with increment of 2'],
+            ['(equal? (range 0 6 3) (list 0 3))', true, 'range function with increment of 3'],
+            ['(equal? (range 2 8 1) (list 2 3 4 5 6 7))', true, 'range function with explicit increment of 1'],
             ["(let ((acc '())) (for-each (lambda (x) (set! acc (cons x acc))) (list 1 2 3)) (equal? (reverse acc) (list 1 2 3)))", true, 'for-each with side effects and a `begin` block'],
 
             // Higher-order function tests
