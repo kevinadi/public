@@ -578,7 +578,14 @@
         };
 
         runButton.addEventListener('click', handleRun);
-        inputElement.addEventListener('keydown', handleHistory);
+        inputElement.addEventListener('keydown', (event) => {
+            if (event.ctrlKey && event.key === 'Enter') {
+                event.preventDefault();
+                handleRun();
+            } else {
+                handleHistory(event);
+            }
+        });
         
         printLine('Lisp REPL ready. Start typing expressions above!', 'subtitle');
     };
