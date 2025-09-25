@@ -242,11 +242,7 @@
             'car': (list) => Array.isArray(list) && list.length > 0 ? list[0] : null,
             'cdr': (list) => Array.isArray(list) && list.length > 1 ? list.slice(1) : [],
             'cons': (a, b) => [a].concat(b),
-            'abs': Math.abs,
             'list': (...args) => args,
-            'max': Math.max,
-            'min': Math.min,
-            'not': (x) => !x,
             'null?': (l) => Array.isArray(l) && l.length === 0,
             'pair?': (x) => Array.isArray(x) && x.length > 0,
             'number?': (x) => typeof x === 'number',
@@ -254,6 +250,16 @@
             'round': Math.round,
             // Check for a string that is not a string literal
             'symbol?': (x) => typeof x === 'string' && !x.startsWith('"'),
+            'error': (msg) => { throw new Error(msg); },
+            'apply': (func, args) => {
+                if (typeof func !== 'function') {
+                    throw new Error('apply: first argument must be a procedure');
+                }
+                if (!Array.isArray(args)) {
+                    throw new Error('apply: second argument must be a list');
+                }
+                return func(...args);
+            },
         };
         return env;
     };
@@ -297,7 +303,47 @@
       'lambda': (x, env) => {
         const [parms, ...body] = x.slice(1);
         return (...args) => {
-          const lambdaEnv = new Env(parms, args, env);
+          // Handle &rest parameters in lambda
+          let lambdaParams = [];
+          let lambdaArgs = [];
+          let restIndex = -1;
+          
+          // Find &rest parameter if it exists
+          for (let i = 0; i < parms.length; i++) {
+            if (parms[i] === '&rest') {
+              restIndex = i;
+              break;
+            }
+          }
+          
+          if (restIndex !== -1) {
+            // Handle &rest parameters
+            if (restIndex + 1 >= parms.length) {
+              throw new Error('&rest must be followed by a parameter name');
+            }
+            
+            // Regular parameters before &rest
+            lambdaParams = parms.slice(0, restIndex);
+            lambdaArgs = args.slice(0, restIndex);
+            
+            // Rest parameter gets remaining arguments as a list
+            const restParam = parms[restIndex + 1];
+            const restArgs = args.slice(restIndex);
+            
+            lambdaParams.push(restParam);
+            lambdaArgs.push(restArgs);
+            
+            // Check if there are parameters after &rest (which is an error)
+            if (restIndex + 2 < parms.length) {
+              throw new Error('&rest parameter must be the last parameter');
+            }
+          } else {
+            // No &rest, use parameters as-is
+            lambdaParams = parms;
+            lambdaArgs = args;
+          }
+          
+          const lambdaEnv = new Env(lambdaParams, lambdaArgs, env);
           // Handle multiple body expressions - evaluate all but return the last
           let result;
           for (const expr of body) {
@@ -447,6 +493,24 @@
         ; unless macro with &rest support for multiple body expressions  
         (defmacro unless (test &rest body)
             (list 'if (list 'not test) (cons 'begin body)))
+
+        ; Standard functions implemented in Lisp
+        (defun abs (x) (if (< x 0) (- x) x))
+        (defun not (x) (if x #f #t))
+        
+        ; max with elegant recursive implementation using apply
+        (defun max (&rest args)
+            (if (null? (cdr args))
+                (car args)
+                (let ((rest-max (apply max (cdr args))))
+                    (if (> (car args) rest-max) (car args) rest-max))))
+        
+        ; min with elegant recursive implementation using apply
+        (defun min (&rest args)
+            (if (null? (cdr args))
+                (car args)
+                (let ((rest-min (apply min (cdr args))))
+                    (if (< (car args) rest-min) (car args) rest-min))))
 
         ; length is now tail-recursive with a helper
         (defun length-aux (l count)
@@ -598,6 +662,22 @@
             // Higher-order function tests
             ['(equal? (map (lambda (x) (* x x)) (list 1 2 3)) (list 1 4 9))', true, 'map function'],
             ['(equal? (filter (lambda (x) (> x 2)) (list 1 2 3 4 5)) (list 3 4 5))', true, 'filter function'],
+            
+            // Test functions moved to bootstrap
+            ['(abs -5)', 5, 'abs function with negative number'],
+            ['(abs 5)', 5, 'abs function with positive number'],
+            ['(not #t)', false, 'not function with true'],
+            ['(not #f)', true, 'not function with false'],
+            ['(max 1 5 3 2)', 5, 'max function with multiple arguments'],
+            ['(min 1 5 3 2)', 1, 'min function with multiple arguments'],
+            
+            // Test apply function
+            ['(apply + (list 1 2 3 4))', 10, 'apply function with addition'],
+            ['(apply max (list 1 5 3 2))', 5, 'apply function with max'],
+            ['(equal? (apply list (list 1 2 3)) (list 1 2 3))', true, 'apply function with list'],
+            ['(max 42)', 42, 'max function with single argument'],
+            ['(min 42)', 42, 'min function with single argument'],
+            ['(apply + (range 1 6))', 15, 'apply with range: sum of 1+2+3+4+5'],
         ];
 
         printLine('--- Running self-tests ---', 'subtitle');
