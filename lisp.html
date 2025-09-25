@@ -280,11 +280,6 @@
         const [symbol, exp] = x.slice(1);
         env.data[symbol] = evalExp(exp, env);
       },
-      'defun': (x, env) => {
-        const [symbol, parms, body] = x.slice(1);
-        const lambdaExp = ['lambda', parms, body];
-        return specialForms['define'](['define', symbol, lambdaExp], env);
-      },
       // New: 'let' special form for local bindings
       'let': (x, env) => {
         const [bindings, ...body] = x.slice(1);
@@ -330,6 +325,20 @@
           result = evalExp(exp, env);
         }
         return result;
+      },
+      // Macro support - defmacro defines a macro
+      'defmacro': (x, env) => {
+        const [name, params, body] = x.slice(1);
+        const macro = (...args) => {
+          // Create a new environment with macro parameters bound to arguments
+          const macroEnv = new Env(params, args, env);
+          // Evaluate the macro body to get the expanded form
+          const expanded = evalExp(body, macroEnv);
+          // Evaluate the expanded form in the original environment
+          return evalExp(expanded, env);
+        };
+        macro.isMacro = true;
+        env.data[name] = macro;
       }
     };
 
@@ -358,9 +367,15 @@
             return specialForms[first](x, env);
         } else {
             const proc = evalExp(first, env);
-            const args = rest.map(arg => evalExp(arg, env));
             if (typeof proc === 'function') {
-                return proc(...args);
+                if (proc.isMacro) {
+                    // For macros, pass unevaluated arguments
+                    return proc(...rest);
+                } else {
+                    // For regular functions, evaluate arguments first
+                    const args = rest.map(arg => evalExp(arg, env));
+                    return proc(...args);
+                }
             } else {
                 throw new Error(`'${first}' is not a procedure`);
             }
@@ -369,6 +384,10 @@
 
     const bootstrap = (env) => {
         const bootstrapCode = `
+        ; defun implemented as a macro
+        (defmacro defun (name params body)
+            (list 'define name (list 'lambda params body)))
+
         ; length is now tail-recursive with a helper
         (defun length-aux (l count)
             (if (null? l)
@@ -484,6 +503,18 @@
             ['(equal? (square 5) 25)', true, 'Tests the new `square` function'],
             ['(let ((x 10)) (+ x 5))', 15, 'let with a single binding'],
             ['(let ((x 10) (y 5)) (+ x y))', 15, 'let with multiple bindings'],
+            
+            // Test Cases for macros and defmacro
+            ['(defmacro when (test body) (list (quote if) test body))', null, 'Defines a macro `when`'],
+            ['(when #t 42)', 42, 'Tests the new `when` macro with true condition'],
+            ['(when #f 42)', null, 'Tests the new `when` macro with false condition'],
+            ['(defmacro unless (test body) (list (quote if) (list (quote not) test) body))', null, 'Defines a macro `unless`'],
+            ['(unless #f 99)', 99, 'Tests the new `unless` macro with false condition'],
+            ['(unless #t 99)', null, 'Tests the new `unless` macro with true condition'],
+            
+            // Test that defun is really a macro (it should expand to define + lambda)
+            ['(defun factorial (n) (if (= n 0) 1 (* n (factorial (- n 1)))))', null, 'Defines factorial function via defun macro'],
+            ['(factorial 5)', 120, 'Tests factorial function defined via defun macro'],
             
             // Test Case for `zip`
             ['(equal? (zip (list 1 2) (list "a" "b")) (list (list 1 "a") (list 2 "b")))', true, 'zip function'],
