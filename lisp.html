@@ -272,6 +272,12 @@
             <li class="macro tooltip"><span class="impl-marker lisp"></span>dotimes
                 <span class="tooltiptext">Executes body a specified number of times with loop variable<div class="example">(dotimes (i 5) (print i))</div></span>
             </li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>cond*
+                <span class="tooltiptext">Alternative cond implementation - multi-way conditional with else clause<div class="example">(cond* ((< x 0) "negative") ((= x 0) "zero") (else "positive"))</div></span>
+            </li>
+            <li class="macro tooltip"><span class="impl-marker lisp"></span>let*
+                <span class="tooltiptext">Sequential let - each binding can use previous bindings<div class="example">(let* ((x 5) (y (+ x 3))) (+ x y))</div></span>
+            </li>
         </ul>
     </div>
 
