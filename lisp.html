@@ -1454,9 +1454,19 @@
             inHistoryMode = false; // Exit history mode after running command
 
             try {
-                const ast = parse(program);
-                const result = evalExp(ast, env);
-                printLine(toString(result), 'result');
+                // Handle multiple statements like bootstrap code
+                const tokens = tokenize(program);
+                let lastResult = null;
+                
+                while (tokens.length > 0) {
+                    const expr = readFromTokens(tokens);
+                    lastResult = evalExp(expr, env);
+                }
+                
+                // Only print the result of the last expression
+                if (lastResult !== null) {
+                    printLine(toString(lastResult), 'result');
+                }
             } catch (e) {
                 printLine(`Error: ${e.message}`, 'result');
             }
