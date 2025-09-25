@@ -305,6 +305,12 @@
             <li class="tooltip"><span class="impl-marker hardcoded"></span>round
                 <span class="tooltiptext">Rounds to nearest integer<div class="example">(round 3.7) ; returns 4</div></span>
             </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>floor
+                <span class="tooltiptext">Rounds down to nearest integer<div class="example">(floor 3.7) ; returns 3</div></span>
+            </li>
+            <li class="tooltip"><span class="impl-marker hardcoded"></span>ceil
+                <span class="tooltiptext">Rounds up to nearest integer<div class="example">(ceil 3.2) ; returns 4</div></span>
+            </li>
             <li class="tooltip"><span class="impl-marker lisp"></span>max
                 <span class="tooltiptext">Returns the largest of the arguments<div class="example">(max 3 7 2 9 1) ; returns 9</div></span>
             </li>
@@ -317,8 +323,8 @@
             <li class="tooltip"><span class="impl-marker lisp"></span>cube
                 <span class="tooltiptext">Returns the cube of a number<div class="example">(cube 3) ; returns 27</div></span>
             </li>
-            <li class="tooltip"><span class="impl-marker lisp"></span>power
-                <span class="tooltiptext">Raises base to the power of exponent<div class="example">(power 2 8) ; returns 256</div></span>
+            <li class="tooltip"><span class="impl-marker lisp"></span>expt
+                <span class="tooltiptext">Raises base to the power of exponent<div class="example">(expt 2 8) ; returns 256</div></span>
             </li>
             <li class="tooltip"><span class="impl-marker lisp"></span>factorial
                 <span class="tooltiptext">Returns the factorial of a number<div class="example">(factorial 5) ; returns 120</div></span>
@@ -681,6 +687,8 @@
             'number?': (x) => typeof x === 'number',
             'procedure?': (x) => typeof x === 'function',
             'round': Math.round,
+            'floor': Math.floor,
+            'ceil': Math.ceil,
             // Check for a string that is not a string literal
             'symbol?': (x) => typeof x === 'string' && !x.startsWith('"'),
             'error': (msg) => { throw new Error(msg); },
@@ -1100,12 +1108,12 @@
         ; Mathematical functions
         (defun square (x) (* x x))
         (defun cube (x) (* x x x))
-        (defun power (base exp)
+        (defun expt (base exp)
             (if (= exp 0)
                 1
                 (if (= exp 1)
                     base
-                    (* base (power base (- exp 1))))))
+                    (* base (expt base (- exp 1))))))
         (defun factorial (n)
             (if (<= n 1)
                 1
@@ -1315,6 +1323,10 @@
             // Test functions moved to bootstrap
             ['(abs -5)', 5, 'abs function with negative number'],
             ['(abs 5)', 5, 'abs function with positive number'],
+            ['(floor 3.7)', 3, 'floor function'],
+            ['(floor -2.3)', -3, 'floor function with negative number'],
+            ['(ceil 3.2)', 4, 'ceil function'],
+            ['(ceil -2.7)', -2, 'ceil function with negative number'],
             ['(not #t)', false, 'not function with true'],
             ['(not #f)', true, 'not function with false'],
             ['(max 1 5 3 2)', 5, 'max function with multiple arguments'],
@@ -1331,8 +1343,8 @@
             // Test newly added mathematical functions
             ['(square 5)', 25, 'square function'],
             ['(cube 3)', 27, 'cube function'],
-            ['(power 2 3)', 8, 'power function'],
-            ['(power 5 0)', 1, 'power function with exponent 0'],
+            ['(expt 2 3)', 8, 'expt function'],
+            ['(expt 5 0)', 1, 'expt function with exponent 0'],
             ['(factorial 4)', 24, 'factorial function'],
             ['(factorial 0)', 1, 'factorial of 0'],
             
@@ -1585,8 +1597,11 @@
                     '/': '(/ num1 num2)',
                     'abs': '(abs number)',
                     'round': '(round number)',
+                    'floor': '(floor number)',
+                    'ceil': '(ceil number)',
                     'max': '(max num1 num2 num3)',
                     'min': '(min num1 num2 num3)',
+                    'expt': '(expt base exponent)',
                     
                     // Comparison
                     '=': '(= num1 num2)',
