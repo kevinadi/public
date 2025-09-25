@@ -230,6 +230,9 @@
             <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>let
                 <span class="tooltiptext">Creates local bindings for variables within a scope<div class="example">(let ((x 5) (y 3)) (+ x y))</div></span>
             </li>
+            <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>let*
+                <span class="tooltiptext">Sequential let - each binding can use previous bindings<div class="example">(let* ((x 5) (y (+ x 3))) (+ x y))</div></span>
+            </li>
             <li class="special-form tooltip"><span class="impl-marker hardcoded"></span>quote
                 <span class="tooltiptext">Returns the literal expression without evaluating it<div class="example">(quote (+ 1 2)) ; returns (+ 1 2), not 3</div></span>
             </li>
@@ -274,9 +277,6 @@
             </li>
             <li class="macro tooltip"><span class="impl-marker lisp"></span>cond*
                 <span class="tooltiptext">Alternative cond implementation - multi-way conditional with else clause<div class="example">(cond* ((< x 0) "negative") ((= x 0) "zero") (else "positive"))</div></span>
-            </li>
-            <li class="macro tooltip"><span class="impl-marker lisp"></span>let*
-                <span class="tooltiptext">Sequential let - each binding can use previous bindings<div class="example">(let* ((x 5) (y (+ x 3))) (+ x y))</div></span>
             </li>
         </ul>
     </div>
@@ -803,6 +803,17 @@
         const values = bindings.map(binding => evalExp(binding[1], env));
         return specialForms['begin'](['begin'].concat(body), new Env(symbols, values, env));
       },
+      'let*': (x, env) => {
+        const [bindings, ...body] = x.slice(1);
+        // Process bindings sequentially, each in the environment built by previous bindings
+        let currentEnv = env;
+        for (const binding of bindings) {
+          const [symbol, exp] = binding;
+          const value = evalExp(exp, currentEnv);
+          currentEnv = new Env([symbol], [value], currentEnv);
+        }
+        return specialForms['begin'](['begin'].concat(body), currentEnv);
+      },
       'quote': (x, env) => {
         return x.slice(1)[0];
       },
@@ -1218,13 +1229,6 @@
         (defmacro dotimes (binding &rest body)
             (let ((var (car binding)) (times (cadr binding)))
                 (list 'for-each (cons 'lambda (cons (list var) body)) (list 'range 0 times))))
-        
-        ; Let variations
-        (defmacro let* (bindings &rest body)
-            (if (null? bindings)
-                (cons 'begin body)
-                (list 'let (list (car bindings)) 
-                      (cons 'let* (cons (cdr bindings) body)))))
         `;
 
         try {
@@ -1281,6 +1285,10 @@
             
             // Test dotimes macro
             ['(begin (define total 0) (dotimes (i 5) (set! total (+ total i))) total)', 10, 'Tests `dotimes` macro: sum of 0+1+2+3+4'],
+            
+            // Test let* macro (sequential bindings)
+            ['(let* ((x 5) (y (* x x))) (list y))', [25], 'Tests `let*` macro: sequential binding where y uses x'],
+            ['(let* ((a 3) (b (+ a 2)) (c (* a b))) c)', 15, 'Tests `let*` macro: multiple sequential bindings'],
             
             // Test enhanced defun with multiple body expressions
             ['(defun test-multi-body (x) (set! x (+ x 1)) (set! x (* x 2)) x)', null, 'Defines function with multiple body expressions'],
@@ -1554,6 +1562,7 @@
                     'cond': '(cond (test1 result1) (test2 result2) (else default-result))',
                     'define': '(define symbol value)',
                     'let': '(let ((var1 val1) (var2 val2)) body)',
+                    'let*': '(let* ((var1 val1) (var2 val2)) body)',
                     'quote': '(quote expression)',
                     'set!': '(set! symbol new-value)',
                     'lambda': '(lambda (param1 param2) body)',
