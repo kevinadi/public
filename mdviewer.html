@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Viewer</title>
+
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/base16-light.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+
+  <!-- marked.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+  <!-- highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/solarized-light.min.css" id="hljs-theme">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css" id="hljs-theme-dark" disabled>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --border: #d0d0d0;
+      --text: #1a1a1a;
+      --header-bg: #ffffff;
+      --btn-bg: #e8e8e8;
+      --btn-hover: #d0d0d0;
+      --btn-active-bg: #1a1a1a;
+      --btn-active-text: #ffffff;
+      --lint-bg: #fafafa;
+      --lint-row-hover: #f0f0f0;
+      --lint-fixable: #1a7f37;
+      --lint-error: #cf222e;
+    }
+    body.dark {
+      --bg: #181818;
+      --surface: #1e1e1e;
+      --border: #2b2b2b;
+      --text: #d4d4d4;
+      --header-bg: #252526;
+      --btn-bg: #2b2b2b;
+      --btn-hover: #3a3a3a;
+      --btn-active-bg: #0078d4;
+      --btn-active-text: #ffffff;
+      --lint-bg: #181818;
+      --lint-row-hover: #2b2b2b;
+      --lint-fixable: #2ea043;
+      --lint-error: #f85149;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-right: auto;
+    }
+
+    button {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--btn-bg);
+      color: var(--text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: var(--btn-hover); }
+    button:disabled { opacity: 0.4; cursor: default; }
+    button:disabled:hover { background: var(--btn-bg); }
+    button.active {
+      background: var(--btn-active-bg);
+      color: var(--btn-active-text);
+      border-color: var(--btn-active-bg);
+    }
+
+    .view-group { display: flex; gap: 4px; }
+
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Panels */
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .panel.hidden { display: none; }
+
+    /* Resizable divider */
+    #divider {
+      width: 5px;
+      flex-shrink: 0;
+      background: var(--border);
+      cursor: col-resize;
+      transition: background 0.15s;
+    }
+    #divider:hover, #divider.dragging { background: #888; }
+    #divider.hidden { display: none; }
+
+    /* CodeMirror overrides */
+    .CodeMirror {
+      flex: 1;
+      height: 100%;
+      font-size: 0.9rem;
+      font-family: 'Menlo', 'Consolas', monospace;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .cm-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      background: var(--surface);
+      min-height: 0;
+    }
+    .cm-wrapper > .CodeMirror { height: 100%; }
+
+    /* Preview */
+    #preview {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* Markdown preview typography */
+    #preview h1, #preview h2, #preview h3,
+    #preview h4, #preview h5, #preview h6 {
+      margin: 1.2em 0 0.4em;
+      line-height: 1.3;
+    }
+    #preview h1 { font-size: 1.8rem; }
+    #preview h2 { font-size: 1.4rem; }
+    #preview h3 { font-size: 1.15rem; }
+    #preview p  { margin: 0.7em 0; line-height: 1.7; }
+    #preview ul, #preview ol { margin: 0.7em 0 0.7em 1.5em; }
+    #preview li { margin: 0.2em 0; line-height: 1.6; }
+    #preview blockquote {
+      border-left: 3px solid var(--border);
+      margin: 0.7em 0;
+      padding: 0.2em 1em;
+      color: #888;
+    }
+    #preview code {
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg);
+      padding: 0.15em 0.35em;
+      border-radius: 3px;
+    }
+    #preview pre {
+      margin: 0.8em 0;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    #preview pre code { background: none; padding: 0; font-size: 0.85rem; }
+    #preview a { color: #0969da; }
+    body.dark #preview a { color: #4daafc; }
+
+    /* ── CodeMirror VS Code Dark+ token color overrides ─────────────────────
+       material-darker has the right background (#212121 ≈ #1e1e1e) but wrong
+       token colors. These overrides align keywords/strings/comments/numbers
+       to match VS Code Dark+ exactly.                                        */
+    body.dark .cm-keyword                         { color: #569cd6; }
+    body.dark .cm-operator                        { color: #569cd6; }
+    body.dark .cm-atom                            { color: #569cd6; }
+    body.dark .cm-string, body.dark .cm-string-2  { color: #ce9178; }
+    body.dark .cm-comment                         { color: #6a9955; }
+    body.dark .cm-number                          { color: #b5cea8; }
+    body.dark .cm-variable, body.dark .cm-variable-2 { color: #9cdcfe; }
+    body.dark .cm-def                             { color: #dcdcaa; }
+    body.dark .cm-type                            { color: #4ec9b0; }
+    body.dark .cm-tag                             { color: #569cd6; }
+    body.dark .cm-attribute                       { color: #9cdcfe; }
+    body.dark .cm-qualifier                       { color: #d7ba7d; }
+    body.dark .cm-builtin                         { color: #dcdcaa; }
+    #preview hr { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
+    #preview table { border-collapse: collapse; margin: 0.8em 0; width: 100%; }
+    #preview th, #preview td { border: 1px solid var(--border); padding: 6px 12px; }
+    #preview th { background: var(--bg); }
+    #preview img { max-width: 100%; }
+
+    /* ── Lint panel ──────────────────────────────────────────────────────── */
+    #lint-panel {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: var(--lint-bg);
+      display: flex;
+      flex-direction: column;
+      max-height: 220px;
+    }
+    #lint-panel.hidden { display: none; }
+
+    #lint-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #lint-summary {
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: auto;
+    }
+    #lint-toolbar button { padding: 3px 10px; font-size: 0.75rem; }
+
+    #lint-list {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .lint-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      border-bottom: 1px solid transparent;
+    }
+    .lint-row:hover { background: var(--lint-row-hover); }
+    .lint-line {
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.75rem;
+      color: #888;
+      min-width: 42px;
+      flex-shrink: 0;
+    }
+    .lint-rule {
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.75rem;
+      color: var(--lint-error);
+      flex-shrink: 0;
+    }
+    .lint-desc { flex: 1; color: var(--text); }
+    .lint-detail { color: #888; font-size: 0.72rem; }
+    .lint-badge {
+      font-size: 0.68rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .lint-badge.fixable {
+      background: color-mix(in srgb, var(--lint-fixable) 15%, transparent);
+      color: var(--lint-fixable);
+      border: 1px solid color-mix(in srgb, var(--lint-fixable) 30%, transparent);
+    }
+    .lint-badge.manual {
+      background: transparent;
+      color: #888;
+      border: 1px solid var(--border);
+    }
+    .lint-empty {
+      padding: 16px 10px;
+      font-size: 0.8rem;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Markdown Viewer</h1>
+    <div class="view-group">
+      <button id="btn-split"   class="active" onclick="setView('split')">Split</button>
+      <button id="btn-editor"  onclick="setView('editor')">Editor</button>
+      <button id="btn-preview" onclick="setView('preview')">Preview</button>
+    </div>
+    <button id="btn-lint" onclick="toggleLint()">Lint</button>
+    <button id="btn-dark" onclick="toggleDark()">Dark</button>
+  </header>
+
+  <main>
+    <div class="panel" id="panel-editor" style="flex: 1 1 50%">
+      <div class="cm-wrapper" id="cm-wrapper"></div>
+      <!-- Lint panel lives inside the editor panel, below CodeMirror -->
+      <div id="lint-panel" class="hidden">
+        <div id="lint-toolbar">
+          <span id="lint-summary">0 issues</span>
+          <button id="btn-fix" onclick="runFix()" disabled>Fix all</button>
+          <button id="btn-format" onclick="runFormat()">Format</button>
+          <button onclick="closeLint()">Close</button>
+        </div>
+        <div id="lint-list"></div>
+      </div>
+    </div>
+    <div id="divider"></div>
+    <div class="panel" id="panel-preview" style="flex: 1 1 50%">
+      <div id="preview"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    // ── markdownlint (ESM, browser) ──────────────────────────────────────────
+    // lint is sync; applyFixes lives in the root export (not /sync)
+    const { lint }       = await import('https://esm.sh/markdownlint@0.40.0/sync');
+    const { applyFixes } = await import('https://esm.sh/markdownlint@0.40.0');
+
+    // ── Prettier (ESM, browser) ───────────────────────────────────────────────
+    const prettier       = await import('https://esm.sh/prettier@3/standalone');
+    const prettierMd     = await import('https://esm.sh/prettier@3/plugins/markdown');
+
+    // ── State ────────────────────────────────────────────────────────────────
+    let dark        = false;
+    let view        = 'split';
+    let lintOpen    = false;
+    let lastViolations = [];
+
+    const SAMPLE = `# Welcome to Markdown Viewer
+
+Start typing in the editor on the left to see a live preview here.
+
+## Features
+
+- **Syntax-highlighted** editor (CodeMirror)
+- **Live preview** rendered by marked.js
+- **Code blocks** highlighted by highlight.js
+- Light / dark mode toggle
+- Split, Editor-only, or Preview-only views
+- Markdown linting via markdownlint with auto-fix
+
+## Code Example
+
+\`\`\`javascript
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+console.log(greet('world'));
+\`\`\`
+
+## Table
+
+| Column A | Column B | Column C |
+|----------|----------|----------|
+| one      | two      | three    |
+| four     | five     | six      |
+
+> Blockquotes work too.
+
+---
+
+*Happy writing!*
+`;
+
+    // ── CodeMirror setup ─────────────────────────────────────────────────────
+    const cm = CodeMirror(document.getElementById('cm-wrapper'), {
+      value: SAMPLE,
+      mode: 'markdown',
+      theme: 'base16-light',
+      lineNumbers: true,
+      lineWrapping: true,
+      autofocus: true,
+    });
+
+    cm.on('change', () => {
+      renderPreview();
+      if (lintOpen) runLint();
+    });
+
+    // ── marked + highlight.js setup ──────────────────────────────────────────
+    marked.setOptions({
+      highlight: (code, lang) => {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: false,
+    });
+
+    function renderPreview() {
+      document.getElementById('preview').innerHTML = marked.parse(cm.getValue());
+    }
+
+    renderPreview();
+
+    // ── View toggle ──────────────────────────────────────────────────────────
+    window.setView = function(v) {
+      view = v;
+      document.getElementById('panel-editor').classList.toggle('hidden', v === 'preview');
+      document.getElementById('panel-preview').classList.toggle('hidden', v === 'editor');
+      ['split', 'editor', 'preview'].forEach(name => {
+        document.getElementById('btn-' + name).classList.toggle('active', name === v);
+      });
+      cm.refresh();
+    };
+
+    // ── Dark mode ────────────────────────────────────────────────────────────
+    window.toggleDark = function() {
+      dark = !dark;
+      document.body.classList.toggle('dark', dark);
+      cm.setOption('theme', dark ? 'material-darker' : 'base16-light');
+      // Toggle between solarized-light (default) and vs2015 (VS Code Dark+)
+      document.getElementById('hljs-theme').disabled      = dark;
+      document.getElementById('hljs-theme-dark').disabled = !dark;
+      document.getElementById('btn-dark').textContent = dark ? 'Light' : 'Dark';
+      document.getElementById('btn-dark').classList.toggle('active', dark);
+    };
+
+    // ── Lint ─────────────────────────────────────────────────────────────────
+    window.toggleLint = function() {
+      if (!lintOpen) {
+        lintOpen = true;
+        document.getElementById('lint-panel').classList.remove('hidden');
+        document.getElementById('btn-lint').classList.add('active');
+        runLint();
+      } else {
+        closeLint();
+      }
+    };
+
+    window.closeLint = function() {
+      lintOpen = false;
+      document.getElementById('lint-panel').classList.add('hidden');
+      document.getElementById('btn-lint').classList.remove('active');
+      cm.refresh();
+    };
+
+    function runLint() {
+      const results = lint({
+        strings: { content: cm.getValue() },
+        config: { default: true },
+      });
+      lastViolations = results.content;
+      renderLintResults(lastViolations);
+      cm.refresh();
+    }
+
+    function renderLintResults(violations) {
+      const list    = document.getElementById('lint-list');
+      const summary = document.getElementById('lint-summary');
+      const fixBtn  = document.getElementById('btn-fix');
+
+      const fixableCount = violations.filter(v => v.fixInfo !== null).length;
+
+      if (violations.length === 0) {
+        summary.textContent = 'No issues';
+        fixBtn.disabled = true;
+        list.innerHTML = '<div class="lint-empty">No issues found.</div>';
+        return;
+      }
+
+      summary.textContent =
+        `${violations.length} issue${violations.length !== 1 ? 's' : ''}`
+        + (fixableCount > 0 ? ` (${fixableCount} fixable)` : '');
+      fixBtn.disabled = fixableCount === 0;
+
+      list.innerHTML = violations.map((v, i) => {
+        const rule    = v.ruleNames[0];
+        const desc    = v.ruleDescription;
+        const detail  = v.errorDetail ? ` — ${v.errorDetail}` : '';
+        const fixable = v.fixInfo !== null;
+        return `<div class="lint-row" onclick="jumpToLine(${v.lineNumber})">
+          <span class="lint-line">L${v.lineNumber}</span>
+          <span class="lint-rule">${rule}</span>
+          <span class="lint-desc">${desc}<span class="lint-detail">${detail}</span></span>
+          <span class="lint-badge ${fixable ? 'fixable' : 'manual'}">${fixable ? 'fixable' : 'manual'}</span>
+        </div>`;
+      }).join('');
+    }
+
+    window.jumpToLine = function(lineNumber) {
+      const line = lineNumber - 1; // CodeMirror is 0-indexed
+      cm.setCursor({ line, ch: 0 });
+      cm.scrollIntoView({ line, ch: 0 }, 80);
+      cm.focus();
+    };
+
+    // ── Auto-fix ─────────────────────────────────────────────────────────────
+    window.runFix = function() {
+      const fixed = applyFixes(cm.getValue(), lastViolations);
+      cm.setValue(fixed);
+      // Lint re-runs automatically via the 'change' handler
+    };
+
+    // ── Prettier format ───────────────────────────────────────────────────────
+    window.runFormat = async function() {
+      const btn = document.getElementById('btn-format');
+      btn.disabled = true;
+      btn.textContent = 'Formatting…';
+      try {
+        const formatted = await prettier.format(cm.getValue(), {
+          parser: 'markdown',
+          plugins: [prettierMd],
+          proseWrap: 'always',
+          printWidth: 80,
+        });
+        cm.setValue(formatted);
+        // Lint re-runs automatically via the 'change' handler
+      } catch (err) {
+        console.error('Prettier error:', err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Format';
+      }
+    };
+
+    // ── Resizable divider ─────────────────────────────────────────────────────
+    const divider   = document.getElementById('divider');
+    const paneLeft  = document.getElementById('panel-editor');
+    const paneRight = document.getElementById('panel-preview');
+
+    divider.addEventListener('mousedown', e => {
+      e.preventDefault();
+      divider.classList.add('dragging');
+
+      const main       = document.querySelector('main');
+      const totalWidth = main.getBoundingClientRect().width - divider.offsetWidth;
+
+      function onMove(e) {
+        const mainLeft = main.getBoundingClientRect().left;
+        const pct = Math.min(80, Math.max(20, (e.clientX - mainLeft) / totalWidth * 100));
+        paneLeft.style.flex  = `0 0 ${pct}%`;
+        paneRight.style.flex = `0 0 ${100 - pct}%`;
+        cm.refresh();
+      }
+
+      function onUp() {
+        divider.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        cm.refresh();
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // Update setView to show/hide divider
+    const _setView = window.setView;
+    window.setView = function(v) {
+      _setView(v);
+      divider.classList.toggle('hidden', v !== 'split');
+      if (v === 'split') {
+        // Restore equal split when switching back to split view
+        paneLeft.style.flex  = '1 1 50%';
+        paneRight.style.flex = '1 1 50%';
+      }
+    };
+  </script>
+</body>
+</html>
