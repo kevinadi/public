@@ -28,6 +28,7 @@ function getAppElements(doc) {
     themeToggle: doc.getElementById("themeToggle"),
     wallpaperToggle: doc.getElementById("wallpaperToggle"),
     resetRotation: doc.getElementById("resetRotation"),
+    forceRefresh: doc.getElementById("forceRefresh"),
     exitWallpaper: doc.getElementById("exitWallpaper"),
   };
 }
@@ -241,6 +242,27 @@ function handleKeydown(event, body, wallpaperToggle) {
   }
 }
 
+async function forceRefreshApp(win, nav, button) {
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Refreshing...";
+  }
+
+  if (nav && "serviceWorker" in nav) {
+    const registrations = await nav.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+  }
+
+  if (win && "caches" in win) {
+    const cacheKeys = await win.caches.keys();
+    await Promise.all(cacheKeys.map((cacheKey) => win.caches.delete(cacheKey)));
+  }
+
+  const nextUrl = new URL(win.location.href);
+  nextUrl.searchParams.set("refresh", String(Date.now()));
+  win.location.replace(nextUrl.toString());
+}
+
 function bindPointerHandlers(doc, elements, state) {
   const { svg } = elements;
   svg.addEventListener("pointerdown", (event) => handlePointerDown(event, svg, state));
@@ -249,12 +271,18 @@ function bindPointerHandlers(doc, elements, state) {
   svg.addEventListener("pointercancel", (event) => handlePointerUp(event, svg, state));
 }
 
-function bindControlHandlers(doc, elements, state) {
-  const { body, themeToggle, wallpaperToggle, resetRotation, exitWallpaper } = elements;
+function bindControlHandlers(doc, win, nav, elements, state) {
+  const { body, themeToggle, wallpaperToggle, resetRotation, forceRefresh, exitWallpaper } = elements;
   const rotationController = { doc, state, updateOuterRotation };
   themeToggle.addEventListener("click", () => toggleTheme(body, themeToggle));
   wallpaperToggle.addEventListener("click", () => toggleWallpaperMode(body, wallpaperToggle));
   resetRotation.addEventListener("click", () => resetBezel.call(rotationController));
+  forceRefresh.addEventListener("click", () => {
+    forceRefreshApp(win, nav, forceRefresh).catch(() => {
+      forceRefresh.disabled = false;
+      forceRefresh.textContent = "Force Refresh";
+    });
+  });
   exitWallpaper.addEventListener("click", () => setWallpaperMode(body, wallpaperToggle, false));
   doc.addEventListener("keydown", (event) => handleKeydown(event, body, wallpaperToggle));
 }
@@ -287,7 +315,7 @@ function createAppController(doc, win, nav) {
     },
     bind() {
       bindPointerHandlers(doc, elements, state);
-      bindControlHandlers(doc, elements, state);
+      bindControlHandlers(doc, win, nav, elements, state);
     },
     registerBrowserFeatures() {
       return registerServiceWorker(win, nav);
