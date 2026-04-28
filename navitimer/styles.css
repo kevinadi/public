@@ -1,0 +1,241 @@
+:root {
+  color-scheme: dark;
+  --bg-start: #090b10;
+  --bg-end: #171d28;
+  --panel: rgba(12, 15, 22, 0.72);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --dial-main: #0b0d11;
+  --dial-inner: #12161c;
+  --dial-core: #050607;
+  --tick: #d8d0c0;
+  --tick-soft: rgba(216, 208, 192, 0.55);
+  --text-main: #f0eadf;
+  --text-soft: rgba(240, 234, 223, 0.76);
+  --accent: #d54b4b;
+  --accent-soft: rgba(213, 75, 75, 0.18);
+  --shadow: rgba(0, 0, 0, 0.52);
+  --bezel-metal-1: #3c434c;
+  --bezel-metal-2: #1a1f25;
+  --bezel-metal-3: #636d79;
+  --bezel-stroke-strong: rgba(255, 255, 255, 0.18);
+  --bezel-stroke: rgba(255, 255, 255, 0.14);
+  --bezel-stroke-soft: rgba(255, 255, 255, 0.07);
+  --dial-stroke-soft: rgba(255, 255, 255, 0.06);
+  --scale-band-outer: rgba(255, 255, 255, 0.055);
+  --scale-band-inner: rgba(255, 255, 255, 0.045);
+  --center-core-stroke: rgba(255, 255, 255, 0.2);
+  --center-crosshair: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="light"] {
+  color-scheme: light;
+  --bg-start: #eef1f6;
+  --bg-end: #d5dde8;
+  --panel: rgba(255, 255, 255, 0.68);
+  --panel-border: rgba(23, 29, 40, 0.1);
+  --dial-main: #f5f1e9;
+  --dial-inner: #e1ddd4;
+  --dial-core: #faf8f2;
+  --tick: #25282d;
+  --tick-soft: rgba(37, 40, 45, 0.54);
+  --text-main: #11161d;
+  --text-soft: rgba(17, 22, 29, 0.72);
+  --accent: #b13636;
+  --accent-soft: rgba(177, 54, 54, 0.15);
+  --shadow: rgba(38, 43, 50, 0.18);
+  --bezel-metal-1: #d8dee7;
+  --bezel-metal-2: #aab2bc;
+  --bezel-metal-3: #f8fbff;
+  --bezel-stroke-strong: rgba(37, 40, 45, 0.24);
+  --bezel-stroke: rgba(37, 40, 45, 0.18);
+  --bezel-stroke-soft: rgba(37, 40, 45, 0.12);
+  --dial-stroke-soft: rgba(37, 40, 45, 0.09);
+  --scale-band-outer: rgba(37, 40, 45, 0.1);
+  --scale-band-inner: rgba(37, 40, 45, 0.08);
+  --center-core-stroke: rgba(37, 40, 45, 0.18);
+  --center-crosshair: rgba(37, 40, 45, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(213, 75, 75, 0.09), transparent 22%),
+    linear-gradient(180deg, var(--bg-start), var(--bg-end));
+  color: var(--text-main);
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.controls,
+.info-strip {
+  position: absolute;
+  left: 50%;
+  width: min(1120px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  backdrop-filter: blur(16px);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  box-shadow: 0 18px 42px var(--shadow);
+  z-index: 2;
+}
+
+.controls {
+  top: 16px;
+}
+
+.info-strip {
+  bottom: 16px;
+  font-size: 0.92rem;
+  color: var(--text-soft);
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.brand-block h1 {
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.control-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+button {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  color: var(--text-main);
+  padding: 10px 14px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(213, 75, 75, 0.35);
+}
+
+.exit-wallpaper {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 12px 16px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 120px 24px;
+}
+
+.dial-frame {
+  width: min(88vh, 88vw, 860px);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 35px 60px var(--shadow));
+}
+
+#dialSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  touch-action: none;
+  user-select: none;
+}
+
+.info-strip > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.info-label {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+}
+
+body.wallpaper-mode .controls,
+body.wallpaper-mode .info-strip {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.wallpaper-mode .exit-wallpaper {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.wallpaper-mode .stage {
+  padding: 0;
+}
+
+body.wallpaper-mode .dial-frame {
+  width: min(96vh, 96vw, 960px);
+}
+
+@media (max-width: 860px) {
+  .controls,
+  .info-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .control-group {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .info-strip > div {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stage {
+    padding: 160px 18px 130px;
+  }
+
+  body.wallpaper-mode .stage {
+    padding: 0;
+  }
+}

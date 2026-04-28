@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#090b10" />
+    <title>E6B Navitimer Mockup</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-theme="dark">
+    <div class="app-shell" id="appShell">
+      <header class="controls" id="controls">
+        <div class="brand-block">
+          <div class="eyebrow">Circular Slide Rule</div>
+          <h1>E6B / Navitimer Mockup</h1>
+        </div>
+
+        <div class="control-group">
+          <button type="button" id="themeToggle">Light Mode</button>
+          <button type="button" id="wallpaperToggle">Wallpaper Mode</button>
+          <button type="button" id="resetRotation">Reset Bezel</button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <section class="dial-frame" aria-label="Navitimer inspired E6B dial mockup">
+          <svg id="dialSvg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+            <title id="title">Navitimer inspired circular slide rule mockup</title>
+            <desc id="desc">A centered pilot watch style circular slide rule with a movable outer ring and fixed inner scale.</desc>
+          </svg>
+        </section>
+      </main>
+
+      <footer class="info-strip" id="infoStrip">
+        <div>
+          <span class="info-label">Use Case</span>
+          <span>Keep the wheel centered for wallpaper screenshots and travel FX reference.</span>
+        </div>
+        <div>
+          <span class="info-label">Interaction</span>
+          <span>Drag the outer bezel. The inner scale stays fixed like a Navitimer.</span>
+        </div>
+      </footer>
+
+      <button type="button" id="exitWallpaper" class="exit-wallpaper">Exit Wallpaper</button>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

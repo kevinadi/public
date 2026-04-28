@@ -7,3 +7,4 @@
 - [RPN Calculator](rpncalc.html)
 - [Guitar Scales](guitarscales.html)
 - [Lisp Interpreter](lisp.html)
+- [Navitimer](navitimer/index.html)
