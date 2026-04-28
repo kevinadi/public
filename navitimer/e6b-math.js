@@ -49,10 +49,10 @@ export function tickStrength(value) {
   }
 
   if (value < 40) {
-    if (isMultiple(value, 2)) {
+    if (Number.isInteger(value)) {
       return "major";
     }
-    return Number.isInteger(value) ? "medium" : "minor";
+    return "minor";
   }
 
   if (value < 60) {
