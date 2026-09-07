@@ -26,8 +26,72 @@
         }
         h1 {
             margin-top: 0;
+            margin-bottom: 25px;
             font-size: 24px;
         }
+        
+        /* Clock Visual Styles */
+        .clock {
+            width: 180px;
+            height: 180px;
+            background-color: #1e1e24;
+            border: 4px solid #4CAF50;
+            border-radius: 50%;
+            margin: 0 auto 25px auto;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .marker {
+            position: absolute;
+            background-color: #aaa;
+        }
+        .marker.twelve { top: 5px; left: 50%; transform: translateX(-50%); width: 4px; height: 12px; }
+        .marker.six    { bottom: 5px; left: 50%; transform: translateX(-50%); width: 4px; height: 12px; }
+        .marker.three  { right: 5px; top: 50%; transform: translateY(-50%); width: 12px; height: 4px; }
+        .marker.nine   { left: 5px; top: 50%; transform: translateY(-50%); width: 12px; height: 4px; }
+        
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .hour-hand {
+            width: 6px;
+            height: 45px;
+            margin-left: -3px;
+            background-color: #fff;
+            z-index: 2;
+        }
+        .minute-hand {
+            width: 4px;
+            height: 70px;
+            margin-left: -2px;
+            background-color: #ccc;
+            z-index: 3;
+        }
+        .second-hand {
+            width: 2px;
+            height: 80px;
+            margin-left: -1px;
+            background-color: #f44336;
+            z-index: 4;
+        }
+        .center-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #f44336;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
         .controls {
             margin: 20px 0 30px 0;
         }
@@ -99,10 +163,22 @@
     <div class="container">
         <h1>Watch Simulator</h1>
         
+        <!-- The Simulated Clock Face -->
+        <div class="clock">
+            <div class="marker twelve"></div>
+            <div class="marker three"></div>
+            <div class="marker six"></div>
+            <div class="marker nine"></div>
+            
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+            <div class="hand second-hand" id="secondHand"></div>
+            <div class="center-dot"></div>
+        </div>
+        
         <div class="controls">
             <label for="freqInput">Movement Frequency</label>
             <div class="input-group">
-                <!-- Using step="0.5" allows for values like 3.5 or 4.5 -->
                 <input type="number" id="freqInput" min="1" max="10" step="0.5" value="3">
                 <span class="unit">Hz</span>
             </div>
@@ -116,44 +192,90 @@
         let audioCtx;
         let isPlaying = false;
         let frequency = 3; // Hz
-        let isTickPhase = true; // Used to alternate the sound slightly
+        let isTickPhase = true; 
         
-        // Scheduling variables for precise Web Audio API timing
+        // Audio Scheduling variables
         let nextTickTime = 0.0;
+        let startAudioTime = 0.0;
+        let startTickIndex = 0;
         let timerID;
-        const lookahead = 25.0; // How frequently to call scheduling function (in milliseconds)
-        const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
+        const lookahead = 25.0; 
+        const scheduleAheadTime = 0.1; 
 
+        // DOM Elements
         const toggleBtn = document.getElementById('toggleBtn');
         const freqInput = document.getElementById('freqInput');
         const calcDisplay = document.getElementById('calcDisplay');
+        
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const secondHand = document.getElementById('secondHand');
 
-        // Update display text helper
+        // Text Helper
         function updateDisplay(val) {
             const ticksPerSecond = val * 2;
-            const ticksPerHour = ticksPerSecond * 3600; // 60 seconds * 60 minutes
-            // .toLocaleString() adds nice commas to the number (e.g., 28,800)
+            const ticksPerHour = ticksPerSecond * 3600; 
             calcDisplay.textContent = `Generates ${ticksPerSecond} ticks per second (${ticksPerHour.toLocaleString()} per hour)`;
         }
 
-        // Update frequency from text input
+        // Clock Visual Update Loop
+        function drawClock() {
+            const now = new Date();
+            const ms = now.getMilliseconds();
+            const s = now.getSeconds();
+            const m = now.getMinutes();
+            const h = now.getHours();
+
+            const ticksPerSecond = frequency * 2;
+            let secondAngle;
+
+            // Phase-locked calculation
+            if (isPlaying && audioCtx) {
+                const elapsedAudio = audioCtx.currentTime - startAudioTime;
+                const ticksElapsed = elapsedAudio > 0 ? Math.floor(elapsedAudio * ticksPerSecond) : 0;
+                const currentTickInMinute = (startTickIndex + ticksElapsed) % (60 * ticksPerSecond);
+                const degreesPerTick = 360 / (60 * ticksPerSecond);
+                secondAngle = currentTickInMinute * degreesPerTick;
+            } else {
+                // System clock fallback when audio is stopped
+                const totalSeconds = s + (ms / 1000);
+                const currentTickInMinute = Math.floor(totalSeconds * ticksPerSecond);
+                const degreesPerTick = 360 / (60 * ticksPerSecond);
+                secondAngle = currentTickInMinute * degreesPerTick;
+            }
+
+            // Minute and Hour hands move smoothly relative to time
+            const minuteAngle = (m + (s + ms / 1000) / 60) * 6; // 6 degrees per minute
+            const hourAngle = ((h % 12) + m / 60) * 30; // 30 degrees per hour
+
+            // Apply rotations
+            secondHand.style.transform = `rotate(${secondAngle}deg)`;
+            minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
+            hourHand.style.transform = `rotate(${hourAngle}deg)`;
+
+            requestAnimationFrame(drawClock);
+        }
+        
+        // Start the visual clock loop
+        requestAnimationFrame(drawClock);
+
+        // Update frequency on input
         freqInput.addEventListener('input', function() {
             let val = parseFloat(this.value);
-            
             if (!isNaN(val)) {
-                if (val < 0.5) val = 0.5; // Give a slightly lower bound just in case
-                if (val > 20) val = 20;   // Prevent crazy high numbers
+                if (val < 0.5) val = 0.5; 
+                if (val > 20) val = 20;   
                 frequency = val;
                 updateDisplay(frequency);
             }
         });
 
-        // When the user clicks away from the input, update the box to show the clamped value
+        // Clean up input on blur
         freqInput.addEventListener('blur', function() {
             this.value = frequency;
         });
 
-        // Toggle playback
+        // Toggle Audio Playback
         toggleBtn.addEventListener('click', function() {
             if (!isPlaying) {
                 if (!audioCtx) {
@@ -172,8 +294,16 @@
                 toggleBtn.textContent = 'Stop Ticking';
                 toggleBtn.classList.add('stop');
                 
-                nextTickTime = audioCtx.currentTime + 0.05;
-                isTickPhase = true; // Reset phase
+                // Set initial audio execution time and sync starting index with current system time
+                const now = new Date();
+                const ticksPerSecond = frequency * 2;
+                const startSecondFraction = now.getSeconds() + (now.getMilliseconds() / 1000);
+                
+                startTickIndex = Math.floor(startSecondFraction * ticksPerSecond);
+                startAudioTime = audioCtx.currentTime + 0.05;
+                nextTickTime = startAudioTime;
+                
+                isTickPhase = true; 
                 scheduler();
             } else {
                 isPlaying = false;
@@ -183,12 +313,11 @@
             }
         });
 
-        // Generates a short, percussive "click" sound
+        // Generate Audio Click
         function playTick(time) {
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
 
-            // Alternating the starting pitch creates a realistic "tick-tock" asymmetry
             const startPitch = isTickPhase ? 4000 : 3500;
 
             osc.type = 'triangle';
@@ -204,15 +333,12 @@
             osc.start(time);
             osc.stop(time + 0.03); 
             
-            // Flip the phase for the next sound
             isTickPhase = !isTickPhase;
         }
 
-        // Looks ahead and schedules ticks perfectly without jitter
+        // Web Audio Scheduler
         function scheduler() {
-            // Actual ticks per second is double the movement frequency
             let ticksPerSecond = frequency * 2; 
-
             while (nextTickTime < audioCtx.currentTime + scheduleAheadTime) {
                 playTick(nextTickTime);
                 nextTickTime += (1.0 / ticksPerSecond); 
