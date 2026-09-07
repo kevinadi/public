@@ -8,3 +8,4 @@
 - [Guitar Scales](guitarscales.html)
 - [Lisp Interpreter](lisp.html)
 - [Navitimer](navitimer/index.html)
+- [Watch tick simulator](watch-tick.html)

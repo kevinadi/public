@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Tick Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e24;
+            color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #2b2b36;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 350px;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .controls {
+            margin: 20px 0 30px 0;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        input[type="number"] {
+            width: 90px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+            background-color: #1e1e24;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 5px 10px;
+            text-align: center;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"]:focus {
+            border-color: #45a049;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        }
+        .unit {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .sub-text {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 12px;
+            font-style: italic;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.stop {
+            background-color: #f44336;
+        }
+        button.stop:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Watch Simulator</h1>
+        
+        <div class="controls">
+            <label for="freqInput">Movement Frequency</label>
+            <div class="input-group">
+                <!-- Using step="0.5" allows for values like 3.5 or 4.5 -->
+                <input type="number" id="freqInput" min="1" max="10" step="0.5" value="3">
+                <span class="unit">Hz</span>
+            </div>
+            <div class="sub-text" id="calcDisplay">Generates 6 ticks per second (21,600 per hour)</div>
+        </div>
+
+        <button id="toggleBtn">Start Ticking</button>
+    </div>
+
+    <script>
+        let audioCtx;
+        let isPlaying = false;
+        let frequency = 3; // Hz
+        let isTickPhase = true; // Used to alternate the sound slightly
+        
+        // Scheduling variables for precise Web Audio API timing
+        let nextTickTime = 0.0;
+        let timerID;
+        const lookahead = 25.0; // How frequently to call scheduling function (in milliseconds)
+        const scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
+
+        const toggleBtn = document.getElementById('toggleBtn');
+        const freqInput = document.getElementById('freqInput');
+        const calcDisplay = document.getElementById('calcDisplay');
+
+        // Update display text helper
+        function updateDisplay(val) {
+            const ticksPerSecond = val * 2;
+            const ticksPerHour = ticksPerSecond * 3600; // 60 seconds * 60 minutes
+            // .toLocaleString() adds nice commas to the number (e.g., 28,800)
+            calcDisplay.textContent = `Generates ${ticksPerSecond} ticks per second (${ticksPerHour.toLocaleString()} per hour)`;
+        }
+
+        // Update frequency from text input
+        freqInput.addEventListener('input', function() {
+            let val = parseFloat(this.value);
+            
+            if (!isNaN(val)) {
+                if (val < 0.5) val = 0.5; // Give a slightly lower bound just in case
+                if (val > 20) val = 20;   // Prevent crazy high numbers
+                frequency = val;
+                updateDisplay(frequency);
+            }
+        });
+
+        // When the user clicks away from the input, update the box to show the clamped value
+        freqInput.addEventListener('blur', function() {
+            this.value = frequency;
+        });
+
+        // Toggle playback
+        toggleBtn.addEventListener('click', function() {
+            if (!isPlaying) {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                let val = parseFloat(freqInput.value);
+                frequency = (isNaN(val) || val < 0.5) ? 0.5 : (val > 20 ? 20 : val);
+                freqInput.value = frequency;
+                updateDisplay(frequency);
+
+                isPlaying = true;
+                toggleBtn.textContent = 'Stop Ticking';
+                toggleBtn.classList.add('stop');
+                
+                nextTickTime = audioCtx.currentTime + 0.05;
+                isTickPhase = true; // Reset phase
+                scheduler();
+            } else {
+                isPlaying = false;
+                toggleBtn.textContent = 'Start Ticking';
+                toggleBtn.classList.remove('stop');
+                clearTimeout(timerID);
+            }
+        });
+
+        // Generates a short, percussive "click" sound
+        function playTick(time) {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            // Alternating the starting pitch creates a realistic "tick-tock" asymmetry
+            const startPitch = isTickPhase ? 4000 : 3500;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(startPitch, time);
+            osc.frequency.exponentialRampToValueAtTime(100, time + 0.02);
+
+            gainNode.gain.setValueAtTime(1, time);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start(time);
+            osc.stop(time + 0.03); 
+            
+            // Flip the phase for the next sound
+            isTickPhase = !isTickPhase;
+        }
+
+        // Looks ahead and schedules ticks perfectly without jitter
+        function scheduler() {
+            // Actual ticks per second is double the movement frequency
+            let ticksPerSecond = frequency * 2; 
+
+            while (nextTickTime < audioCtx.currentTime + scheduleAheadTime) {
+                playTick(nextTickTime);
+                nextTickTime += (1.0 / ticksPerSecond); 
+            }
+            timerID = setTimeout(scheduler, lookahead);
+        }
+    </script>
+</body>
+</html>
