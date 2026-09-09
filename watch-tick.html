@@ -129,6 +129,30 @@
             overflow: hidden;
         }
 
+        /* The Going Train (Coaxial Background Gears) */
+        .train-gear {
+            position: absolute;
+            will-change: transform;
+        }
+        /* Largest Gear - Turns 1 rev / 12 Hours */
+        .hour-gear {
+            width: 124px; height: 124px;
+            top: 28px; left: 28px; 
+            z-index: 6;
+        }
+        /* Driving Gear - Turns 1 rev / 1 Minute. Sized perfectly to kiss the Escape Pinion */
+        .second-gear {
+            width: 106px; height: 106px;
+            top: 37px; left: 37px; 
+            z-index: 8;
+        }
+        /* Medium Gear - Turns 1 rev / 1 Hour */
+        .minute-gear {
+            width: 80px; height: 80px;
+            top: 50px; left: 50px; 
+            z-index: 7;
+        }
+
         /* 1. Escape Wheel (Top) */
         .escape-wheel {
             position: absolute;
@@ -200,19 +224,6 @@
             transform: translateX(-50%);
             box-shadow: 0 0 3px rgba(0,0,0,0.6);
             z-index: 13;
-        }
-
-        /* Ambient Going Train Gear */
-        .gear-bg {
-            position: absolute;
-            border-radius: 50%;
-            border: 4px dashed #616161;
-            opacity: 0.5;
-            width: 40px; 
-            height: 40px; 
-            top: 35px; 
-            left: 20px;
-            will-change: transform;
         }
 
         .click-hint {
@@ -310,10 +321,57 @@
                     <div class="center-dot"></div>
                 </div>
 
-                <!-- Back: Mechanical Escapement -->
+                <!-- Back: Mechanical Escapement & Going Train -->
                 <div class="watch-face back">
                     
-                    <div class="gear-bg" id="gearBg"></div>
+                    <!-- HOUR WHEEL -->
+                    <div class="train-gear hour-gear" id="hourGear">
+                        <svg viewBox="0 0 100 100" width="100%" height="100%">
+                            <filter id="shadow-h"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.7"/></filter>
+                            <g filter="url(#shadow-h)">
+                                <!-- stroke-dasharray creates perfect teeth -->
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#455a64" stroke-width="10" stroke-dasharray="3.5 3.56"/>
+                                <circle cx="50" cy="50" r="41" fill="#455a64"/>
+                                <circle cx="50" cy="50" r="33" fill="#1e1e24"/>
+                                <path d="M 50 17 L 50 83 M 17 50 L 83 50" stroke="#455a64" stroke-width="6"/>
+                                <circle cx="50" cy="50" r="8" fill="#455a64"/>
+                                <circle cx="50" cy="50" r="3" fill="#1e1e24"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- MINUTE WHEEL -->
+                    <div class="train-gear minute-gear" id="minuteGear">
+                        <svg viewBox="0 0 100 100" width="100%" height="100%">
+                            <filter id="shadow-m"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.7"/></filter>
+                            <g filter="url(#shadow-m)">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#607d8b" stroke-width="10" stroke-dasharray="4.7 4.72"/>
+                                <circle cx="50" cy="50" r="41" fill="#607d8b"/>
+                                <circle cx="50" cy="50" r="25" fill="#1e1e24"/>
+                                <path d="M 50 25 L 50 75 M 25 50 L 75 50" stroke="#607d8b" stroke-width="5"/>
+                                <circle cx="50" cy="50" r="8" fill="#607d8b"/>
+                                <circle cx="50" cy="50" r="3" fill="#1e1e24"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- SECOND WHEEL -->
+                    <div class="train-gear second-gear" id="secondGear">
+                        <svg viewBox="0 0 100 100" width="100%" height="100%">
+                            <filter id="shadow-s"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.7"/></filter>
+                            <g filter="url(#shadow-s)">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#78909c" stroke-width="10" stroke-dasharray="3 3.28"/>
+                                <circle cx="50" cy="50" r="41" fill="#78909c"/>
+                                <circle cx="50" cy="50" r="34" fill="#1e1e24"/>
+                                <!-- 3 Pointed Spoke Design -->
+                                <line x1="50" y1="16" x2="50" y2="50" stroke="#78909c" stroke-width="4"/>
+                                <line x1="20.5" y1="67" x2="50" y2="50" stroke="#78909c" stroke-width="4"/>
+                                <line x1="79.5" y1="67" x2="50" y2="50" stroke="#78909c" stroke-width="4"/>
+                                <circle cx="50" cy="50" r="6" fill="#78909c"/>
+                                <circle cx="50" cy="50" r="2" fill="#e91e63"/>
+                            </g>
+                        </svg>
+                    </div>
 
                     <!-- Realistic 15-Tooth Escape Wheel -->
                     <div class="escape-wheel" id="escapeWheel">
@@ -328,7 +386,6 @@
                                 
                                 <defs>
                                     <g id="tooth">
-                                        <!-- Shorter, refined tooth tip to kiss the jewel edge perfectly -->
                                         <path d="M 24.5 4 L 25 1 L 27.5 1.5 L 26 5 Z" fill="#cfd8dc"/>
                                     </g>
                                 </defs>
@@ -362,10 +419,8 @@
                                 <feDropShadow dx="0" dy="2" stdDeviation="1" flood-opacity="0.5"/>
                             </filter>
                             <g filter="url(#pf-shadow)">
-                                <!-- Jewels' inner points pulled back slightly to prevent overlapping -->
                                 <polygon points="12,12 15,10 16.5,13 14,16" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
                                 <polygon points="38,12 35,10 33.5,13 36,16" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
-                                
                                 <path d="M 23 18 C 23 16, 27 16, 27 18 L 34 14 L 36 17 L 27 22 L 27 42 L 32 47 L 30 49 L 25 45 L 20 49 L 18 47 L 23 42 L 23 22 L 14 17 L 16 14 Z" fill="#cfd8dc" stroke="#90a4ae" stroke-width="0.5"/>
                                 <circle cx="25" cy="20" r="2.5" fill="#1e1e24"/>
                                 <circle cx="25" cy="20" r="1.5" fill="#e91e63"/>
@@ -414,19 +469,26 @@
         const lookahead = 25.0; 
         const scheduleAheadTime = 0.1; 
 
+        // DOM elements
         const toggleBtn = document.getElementById('toggleBtn');
         const freqInput = document.getElementById('freqInput');
         const calcDisplay = document.getElementById('calcDisplay');
         const watchFlipper = document.getElementById('watchFlipper');
         
+        // Front Hands
         const hourHand = document.getElementById('hourHand');
         const minuteHand = document.getElementById('minuteHand');
         const secondHand = document.getElementById('secondHand');
 
+        // Back Movement Parts
         const balanceWheel = document.getElementById('balanceWheel');
         const palletFork = document.getElementById('palletFork');
         const escapeWheel = document.getElementById('escapeWheel');
-        const gearBg = document.getElementById('gearBg');
+        
+        // Going Train Gears
+        const hourGear = document.getElementById('hourGear');
+        const minuteGear = document.getElementById('minuteGear');
+        const secondGear = document.getElementById('secondGear');
 
         watchFlipper.addEventListener('click', () => {
             watchFlipper.classList.toggle('is-flipped');
@@ -470,34 +532,37 @@
                 continuousTicks = totalSeconds * ticksPerSecond;
             }
 
-            // Front Watch Logic
+            // --- CALCULATE ANGLES ---
             const currentTickInMinute = (startTickIndex + Math.floor(continuousTicks)) % (60 * ticksPerSecond);
             const degreesPerTick = 360 / (60 * ticksPerSecond);
+            
             const secondAngle = currentTickInMinute * degreesPerTick;
             const minuteAngle = (m + (s + ms / 1000) / 60) * 6;
             const hourAngle = ((h % 12) + m / 60) * 30;
 
+            // --- FRONT FACE ---
             secondHand.style.transform = `rotate(${secondAngle}deg)`;
             minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
             hourHand.style.transform = `rotate(${hourAngle}deg)`;
 
-            // Back Movement Logic
+            // --- BACK FACE (Going Train) ---
+            // Viewed from behind, the gears spin in reverse (Counter-Clockwise) relative to the front hands
+            hourGear.style.transform = `rotate(${-hourAngle}deg)`;
+            minuteGear.style.transform = `rotate(${-minuteAngle}deg)`;
+            secondGear.style.transform = `rotate(${-secondAngle}deg)`;
+
+            // --- BACK FACE (Escapement Physics) ---
             const balanceAngle = Math.sin(continuousTicks * Math.PI) * 140; 
             balanceWheel.style.transform = `rotate(${balanceAngle}deg)`;
 
             const isEvenTick = Math.floor(continuousTicks) % 2 === 0;
-            
-            // Reduced swing to 10 degrees (from 12) to match the new jewel geometry
             const palletAngle = isEvenTick ? -10 : 10;
             palletFork.style.transform = `rotate(${palletAngle}deg)`;
 
-            // Fine-tuned offset (+6) ensures the tooth physically meets the jewel edge
+            // Escapement meshes flawlessly with the second gear driving it
             const escapeAngle = Math.floor(continuousTicks) * 12 + 6;
             escapeWheel.style.transform = `rotate(${escapeAngle}deg)`;
             
-            const totalSeconds = s + (ms / 1000);
-            gearBg.style.transform = `rotate(-${totalSeconds * 30}deg)`;
-
             requestAnimationFrame(drawClock);
         }
         
