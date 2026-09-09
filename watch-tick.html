@@ -32,20 +32,42 @@
             font-size: 24px;
         }
         
-        .clock {
+        /* 3D Flip Scene */
+        .watch-scene {
             width: 180px;
             height: 180px;
+            margin: 0 auto 5px auto;
+            perspective: 800px;
+        }
+        .watch-flipper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .watch-flipper.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .watch-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            border-radius: 50%;
             background-color: #1e1e24;
             border: 4px solid #4CAF50;
-            border-radius: 50%;
-            margin: 0 auto 25px auto;
-            position: relative;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.3);
-            /* Fix for iOS Safari border repainting glitches */
-            -webkit-backface-visibility: hidden;
+            box-sizing: border-box;
             backface-visibility: hidden;
-            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.3);
+            transform: translateZ(0); 
         }
+
+        /* Front Face (Clock) */
         .marker {
             position: absolute;
             background-color: #aaa;
@@ -62,7 +84,6 @@
             transform-origin: bottom center;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            /* Hardware acceleration for smooth movement without artifacting */
             will-change: transform;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
@@ -101,8 +122,109 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
+        /* Back Face (Movement Layout) */
+        .watch-face.back {
+            transform: rotateY(180deg);
+            background: radial-gradient(circle, #2b2b36 0%, #17171d 100%);
+            overflow: hidden;
+        }
+
+        /* 1. Escape Wheel (Top) */
+        .escape-wheel {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 15px;
+            left: 61px;
+            will-change: transform;
+            z-index: 10;
+        }
+        
+        /* 2. Pallet Fork (Middle) */
+        .pallet-fork {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            top: 52px;
+            left: 66px;
+            transform-origin: 50% 40%; 
+            will-change: transform;
+            z-index: 11;
+        }
+
+        /* 3. Balance Wheel (Bottom) */
+        .balance-wheel {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            position: absolute;
+            top: 94px;
+            left: 56px;
+            will-change: transform;
+            transform-origin: center center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 5px 10px rgba(0,0,0,0.5);
+            background: rgba(255, 215, 0, 0.05);
+            z-index: 12;
+        }
+        .balance-spoke {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #ffd700;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+        .balance-spoke:nth-child(2) { transform: translateY(-50%) rotate(60deg); }
+        .balance-spoke:nth-child(3) { transform: translateY(-50%) rotate(120deg); }
+        
+        .jewel {
+            position: absolute;
+            width: 6px; height: 6px;
+            background: #e91e63;
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset 0 0 3px rgba(0,0,0,0.8);
+            z-index: 13;
+        }
+        
+        .impulse-pin {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: #e91e63;
+            border-radius: 50%;
+            top: -3px; 
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 3px rgba(0,0,0,0.6);
+            z-index: 13;
+        }
+
+        /* Ambient Going Train Gear */
+        .gear-bg {
+            position: absolute;
+            border-radius: 50%;
+            border: 4px dashed #616161;
+            opacity: 0.5;
+            width: 40px; 
+            height: 40px; 
+            top: 35px; 
+            left: 20px;
+            will-change: transform;
+        }
+
+        .click-hint {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+
+        /* Controls */
         .controls {
-            margin: 20px 0 25px 0;
+            margin: 10px 0 25px 0;
         }
         .input-group {
             display: flex;
@@ -172,22 +294,103 @@
     <div class="container">
         <h1>Watch Simulator</h1>
         
-        <div class="clock">
-            <div class="marker twelve"></div>
-            <div class="marker three"></div>
-            <div class="marker six"></div>
-            <div class="marker nine"></div>
-            
-            <div class="hand hour-hand" id="hourHand"></div>
-            <div class="hand minute-hand" id="minuteHand"></div>
-            <div class="hand second-hand" id="secondHand"></div>
-            <div class="center-dot"></div>
+        <div class="watch-scene">
+            <div class="watch-flipper" id="watchFlipper">
+                
+                <!-- Front: Analog Dial -->
+                <div class="watch-face front">
+                    <div class="marker twelve"></div>
+                    <div class="marker three"></div>
+                    <div class="marker six"></div>
+                    <div class="marker nine"></div>
+                    
+                    <div class="hand hour-hand" id="hourHand"></div>
+                    <div class="hand minute-hand" id="minuteHand"></div>
+                    <div class="hand second-hand" id="secondHand"></div>
+                    <div class="center-dot"></div>
+                </div>
+
+                <!-- Back: Mechanical Escapement -->
+                <div class="watch-face back">
+                    
+                    <div class="gear-bg" id="gearBg"></div>
+
+                    <!-- Realistic 15-Tooth Escape Wheel -->
+                    <div class="escape-wheel" id="escapeWheel">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%">
+                            <filter id="ew-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="0" dy="2" stdDeviation="1" flood-opacity="0.5"/>
+                            </filter>
+                            <g filter="url(#ew-shadow)">
+                                <circle cx="25" cy="25" r="21" fill="none" stroke="#cfd8dc" stroke-width="1.2"/>
+                                <line x1="25" y1="4" x2="25" y2="46" stroke="#cfd8dc" stroke-width="1.2"/>
+                                <line x1="4" y1="25" x2="46" y2="25" stroke="#cfd8dc" stroke-width="1.2"/>
+                                
+                                <defs>
+                                    <g id="tooth">
+                                        <!-- Shorter, refined tooth tip to kiss the jewel edge perfectly -->
+                                        <path d="M 24.5 4 L 25 1 L 27.5 1.5 L 26 5 Z" fill="#cfd8dc"/>
+                                    </g>
+                                </defs>
+                                <use href="#tooth" transform="rotate(0 25 25)"/>
+                                <use href="#tooth" transform="rotate(24 25 25)"/>
+                                <use href="#tooth" transform="rotate(48 25 25)"/>
+                                <use href="#tooth" transform="rotate(72 25 25)"/>
+                                <use href="#tooth" transform="rotate(96 25 25)"/>
+                                <use href="#tooth" transform="rotate(120 25 25)"/>
+                                <use href="#tooth" transform="rotate(144 25 25)"/>
+                                <use href="#tooth" transform="rotate(168 25 25)"/>
+                                <use href="#tooth" transform="rotate(192 25 25)"/>
+                                <use href="#tooth" transform="rotate(216 25 25)"/>
+                                <use href="#tooth" transform="rotate(240 25 25)"/>
+                                <use href="#tooth" transform="rotate(264 25 25)"/>
+                                <use href="#tooth" transform="rotate(288 25 25)"/>
+                                <use href="#tooth" transform="rotate(312 25 25)"/>
+                                <use href="#tooth" transform="rotate(336 25 25)"/>
+                                
+                                <circle cx="25" cy="25" r="4" fill="#cfd8dc"/>
+                                <circle cx="25" cy="25" r="2" fill="#ffd700"/>
+                                <circle cx="25" cy="25" r="1" fill="#e91e63"/>
+                            </g>
+                        </svg>
+                    </div>
+                    
+                    <!-- Realistic Swiss Pallet Fork -->
+                    <div class="pallet-fork" id="palletFork">
+                        <svg viewBox="0 0 50 50" width="100%" height="100%">
+                            <filter id="pf-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="0" dy="2" stdDeviation="1" flood-opacity="0.5"/>
+                            </filter>
+                            <g filter="url(#pf-shadow)">
+                                <!-- Jewels' inner points pulled back slightly to prevent overlapping -->
+                                <polygon points="12,12 15,10 16.5,13 14,16" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
+                                <polygon points="38,12 35,10 33.5,13 36,16" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
+                                
+                                <path d="M 23 18 C 23 16, 27 16, 27 18 L 34 14 L 36 17 L 27 22 L 27 42 L 32 47 L 30 49 L 25 45 L 20 49 L 18 47 L 23 42 L 23 22 L 14 17 L 16 14 Z" fill="#cfd8dc" stroke="#90a4ae" stroke-width="0.5"/>
+                                <circle cx="25" cy="20" r="2.5" fill="#1e1e24"/>
+                                <circle cx="25" cy="20" r="1.5" fill="#e91e63"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Balance Wheel -->
+                    <div class="balance-wheel" id="balanceWheel">
+                        <div class="balance-spoke"></div>
+                        <div class="balance-spoke"></div>
+                        <div class="balance-spoke"></div>
+                        <div class="jewel"></div>
+                        <div class="impulse-pin"></div>
+                    </div>
+                </div>
+
+            </div>
         </div>
+        
+        <div class="click-hint">Tap watch to see movement</div>
         
         <div class="controls">
             <label for="freqInput">Movement Frequency</label>
             <div class="input-group">
-                <!-- Using type="text" with inputmode="decimal" forces the true numerical keypad in iOS -->
                 <input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" class="freq-input" id="freqInput" value="3">
                 <span class="unit">Hz</span>
             </div>
@@ -214,10 +417,20 @@
         const toggleBtn = document.getElementById('toggleBtn');
         const freqInput = document.getElementById('freqInput');
         const calcDisplay = document.getElementById('calcDisplay');
+        const watchFlipper = document.getElementById('watchFlipper');
         
         const hourHand = document.getElementById('hourHand');
         const minuteHand = document.getElementById('minuteHand');
         const secondHand = document.getElementById('secondHand');
+
+        const balanceWheel = document.getElementById('balanceWheel');
+        const palletFork = document.getElementById('palletFork');
+        const escapeWheel = document.getElementById('escapeWheel');
+        const gearBg = document.getElementById('gearBg');
+
+        watchFlipper.addEventListener('click', () => {
+            watchFlipper.classList.toggle('is-flipped');
+        });
 
         function updateDisplay(val) {
             const ticksPerSecond = val * 2;
@@ -225,16 +438,13 @@
             calcDisplay.textContent = `Generates ${ticksPerSecond} ticks per second (${ticksPerHour.toLocaleString()} per hour)`;
         }
 
-        // Dedicated iOS audio engine unlocker
         function unlockAudioContext() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-            
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
-
             const buffer = audioCtx.createBuffer(1, 1, 22050);
             const source = audioCtx.createBufferSource();
             source.buffer = buffer;
@@ -250,21 +460,20 @@
             const h = now.getHours();
 
             const ticksPerSecond = frequency * 2;
-            let secondAngle;
+            let continuousTicks;
 
             if (isPlaying && audioCtx) {
                 const elapsedAudio = audioCtx.currentTime - startAudioTime;
-                const ticksElapsed = elapsedAudio > 0 ? Math.floor(elapsedAudio * ticksPerSecond) : 0;
-                const currentTickInMinute = (startTickIndex + ticksElapsed) % (60 * ticksPerSecond);
-                const degreesPerTick = 360 / (60 * ticksPerSecond);
-                secondAngle = currentTickInMinute * degreesPerTick;
+                continuousTicks = elapsedAudio > 0 ? elapsedAudio * ticksPerSecond : 0;
             } else {
                 const totalSeconds = s + (ms / 1000);
-                const currentTickInMinute = Math.floor(totalSeconds * ticksPerSecond);
-                const degreesPerTick = 360 / (60 * ticksPerSecond);
-                secondAngle = currentTickInMinute * degreesPerTick;
+                continuousTicks = totalSeconds * ticksPerSecond;
             }
 
+            // Front Watch Logic
+            const currentTickInMinute = (startTickIndex + Math.floor(continuousTicks)) % (60 * ticksPerSecond);
+            const degreesPerTick = 360 / (60 * ticksPerSecond);
+            const secondAngle = currentTickInMinute * degreesPerTick;
             const minuteAngle = (m + (s + ms / 1000) / 60) * 6;
             const hourAngle = ((h % 12) + m / 60) * 30;
 
@@ -272,14 +481,29 @@
             minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
             hourHand.style.transform = `rotate(${hourAngle}deg)`;
 
+            // Back Movement Logic
+            const balanceAngle = Math.sin(continuousTicks * Math.PI) * 140; 
+            balanceWheel.style.transform = `rotate(${balanceAngle}deg)`;
+
+            const isEvenTick = Math.floor(continuousTicks) % 2 === 0;
+            
+            // Reduced swing to 10 degrees (from 12) to match the new jewel geometry
+            const palletAngle = isEvenTick ? -10 : 10;
+            palletFork.style.transform = `rotate(${palletAngle}deg)`;
+
+            // Fine-tuned offset (+6) ensures the tooth physically meets the jewel edge
+            const escapeAngle = Math.floor(continuousTicks) * 12 + 6;
+            escapeWheel.style.transform = `rotate(${escapeAngle}deg)`;
+            
+            const totalSeconds = s + (ms / 1000);
+            gearBg.style.transform = `rotate(-${totalSeconds * 30}deg)`;
+
             requestAnimationFrame(drawClock);
         }
         
         requestAnimationFrame(drawClock);
 
-        // Sanitize input parsing since it's now a text field
         freqInput.addEventListener('input', function() {
-            // Replace commas with decimals just in case for European keyboards
             let val = parseFloat(this.value.replace(',', '.'));
             if (!isNaN(val)) {
                 if (val < 0.5) val = 0.5; 
@@ -289,13 +513,10 @@
             }
         });
 
-        // If the user typed invalid text or deleted it entirely, 
-        // losing focus snaps it back to the safe current 'frequency' state
         freqInput.addEventListener('blur', function() {
             this.value = frequency;
         });
 
-        // Combined Touch/Click handler for iOS touch responsiveness
         function handleToggle(e) {
             e.preventDefault(); 
             
