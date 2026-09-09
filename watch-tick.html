@@ -164,19 +164,7 @@
             z-index: 10;
         }
         
-        /* 2. Pallet Fork (Middle) */
-        .pallet-fork {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            top: 52px;
-            left: 66px;
-            transform-origin: 50% 40%; 
-            will-change: transform;
-            z-index: 11;
-        }
-
-        /* 3. Balance Wheel (Bottom) */
+        /* 2. Balance Wheel (Bottom) - Now layer 11 so it sits behind the fork */
         .balance-wheel {
             width: 60px;
             height: 60px;
@@ -189,7 +177,7 @@
             transform-origin: center center;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 5px 10px rgba(0,0,0,0.5);
             background: rgba(255, 215, 0, 0.05);
-            z-index: 12;
+            z-index: 11;
         }
         .balance-spoke {
             position: absolute;
@@ -224,6 +212,18 @@
             transform: translateX(-50%);
             box-shadow: 0 0 3px rgba(0,0,0,0.6);
             z-index: 13;
+        }
+
+        /* 3. Pallet Fork (Middle) - Now layer 12 so it sits in front of the balance wheel */
+        .pallet-fork {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            top: 56px; 
+            left: 66px;
+            transform-origin: 50% 40%; 
+            will-change: transform;
+            z-index: 12;
         }
 
         .click-hint {
@@ -329,7 +329,6 @@
                         <svg viewBox="0 0 100 100" width="100%" height="100%">
                             <filter id="shadow-h"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.7"/></filter>
                             <g filter="url(#shadow-h)">
-                                <!-- stroke-dasharray creates perfect teeth -->
                                 <circle cx="50" cy="50" r="45" fill="none" stroke="#455a64" stroke-width="10" stroke-dasharray="3.5 3.56"/>
                                 <circle cx="50" cy="50" r="41" fill="#455a64"/>
                                 <circle cx="50" cy="50" r="33" fill="#1e1e24"/>
@@ -363,7 +362,6 @@
                                 <circle cx="50" cy="50" r="45" fill="none" stroke="#78909c" stroke-width="10" stroke-dasharray="3 3.28"/>
                                 <circle cx="50" cy="50" r="41" fill="#78909c"/>
                                 <circle cx="50" cy="50" r="34" fill="#1e1e24"/>
-                                <!-- 3 Pointed Spoke Design -->
                                 <line x1="50" y1="16" x2="50" y2="50" stroke="#78909c" stroke-width="4"/>
                                 <line x1="20.5" y1="67" x2="50" y2="50" stroke="#78909c" stroke-width="4"/>
                                 <line x1="79.5" y1="67" x2="50" y2="50" stroke="#78909c" stroke-width="4"/>
@@ -412,6 +410,15 @@
                         </svg>
                     </div>
                     
+                    <!-- Balance Wheel -->
+                    <div class="balance-wheel" id="balanceWheel">
+                        <div class="balance-spoke"></div>
+                        <div class="balance-spoke"></div>
+                        <div class="balance-spoke"></div>
+                        <div class="jewel"></div>
+                        <div class="impulse-pin"></div>
+                    </div>
+                    
                     <!-- Realistic Swiss Pallet Fork -->
                     <div class="pallet-fork" id="palletFork">
                         <svg viewBox="0 0 50 50" width="100%" height="100%">
@@ -428,14 +435,6 @@
                         </svg>
                     </div>
 
-                    <!-- Balance Wheel -->
-                    <div class="balance-wheel" id="balanceWheel">
-                        <div class="balance-spoke"></div>
-                        <div class="balance-spoke"></div>
-                        <div class="balance-spoke"></div>
-                        <div class="jewel"></div>
-                        <div class="impulse-pin"></div>
-                    </div>
                 </div>
 
             </div>
@@ -546,7 +545,6 @@
             hourHand.style.transform = `rotate(${hourAngle}deg)`;
 
             // --- BACK FACE (Going Train) ---
-            // Viewed from behind, the gears spin in reverse (Counter-Clockwise) relative to the front hands
             hourGear.style.transform = `rotate(${-hourAngle}deg)`;
             minuteGear.style.transform = `rotate(${-minuteAngle}deg)`;
             secondGear.style.transform = `rotate(${-secondAngle}deg)`;
@@ -559,7 +557,6 @@
             const palletAngle = isEvenTick ? -10 : 10;
             palletFork.style.transform = `rotate(${palletAngle}deg)`;
 
-            // Escapement meshes flawlessly with the second gear driving it
             const escapeAngle = Math.floor(continuousTicks) * 12 + 6;
             escapeWheel.style.transform = `rotate(${escapeAngle}deg)`;
             
