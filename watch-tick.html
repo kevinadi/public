@@ -165,7 +165,6 @@
             width: 60px;
             height: 60px;
             position: absolute;
-            /* Shifted up to physically overlap the pallet fork! */
             top: 73px; 
             left: 56px;
             will-change: transform;
@@ -181,7 +180,6 @@
             left: 66px;
             transform-origin: 50% 40%; 
             will-change: transform;
-            /* Renders above the balance wheel rim, but engages the inner roller */
             z-index: 12;
         }
 
@@ -330,7 +328,7 @@
                         </svg>
                     </div>
 
-                    <!-- Realistic Escape Wheel -->
+                    <!-- Realistic Escape Wheel with Club Teeth and Spokes -->
                     <div class="escape-wheel" id="escapeWheel">
                         <svg viewBox="0 0 50 50" width="100%" height="100%">
                             <filter id="ew-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -343,14 +341,16 @@
                                     <stop offset="100%" stop-color="#78909c"/>
                                 </linearGradient>
                                 <g id="tooth">
-                                    <path d="M 24.5 4 L 25 1 L 27.5 1.5 L 26 5 Z" fill="url(#ew-metal)"/>
+                                    <!-- Highly detailed "Shoe/Club" tooth -->
+                                    <path d="M 24.2 7 L 24.8 3.5 L 24.3 1.5 L 29 2.5 L 26.5 4.5 L 25.8 7 Z" fill="url(#ew-metal)"/>
                                 </g>
                             </defs>
                             <g filter="url(#ew-shadow)">
-                                <circle cx="25" cy="25" r="16" fill="none" stroke="url(#ew-metal)" stroke-width="1.5"/>
-                                <circle cx="25" cy="25" r="21" fill="none" stroke="url(#ew-metal)" stroke-width="2.5"/>
-                                <line x1="25" y1="4" x2="25" y2="46" stroke="url(#ew-metal)" stroke-width="1.5"/>
-                                <line x1="4" y1="25" x2="46" y2="25" stroke="url(#ew-metal)" stroke-width="1.5"/>
+                                <!-- Rim & Spokes now use a solid color (#b0bec5) so SVG bounding box math doesn't swallow horizontal/vertical lines! -->
+                                <circle cx="25" cy="25" r="18" fill="none" stroke="#b0bec5" stroke-width="1.5"/>
+                                
+                                <line x1="25" y1="7" x2="25" y2="43" stroke="#b0bec5" stroke-width="1.5"/>
+                                <line x1="7" y1="25" x2="43" y2="25" stroke="#b0bec5" stroke-width="1.5"/>
                                 
                                 <use href="#tooth" transform="rotate(0 25 25)"/>
                                 <use href="#tooth" transform="rotate(24 25 25)"/>
@@ -391,11 +391,13 @@
                                 </g>
                             </defs>
                             <g filter="url(#bw-shadow)">
-                                <!-- Main Balance Wheel Rim & Spokes -->
+                                <!-- Main Balance Wheel Rim -->
                                 <circle cx="30" cy="30" r="26" fill="none" stroke="url(#gold)" stroke-width="4"/>
-                                <line x1="30" y1="4" x2="30" y2="56" stroke="url(#gold)" stroke-width="2.5"/>
-                                <line x1="7.5" y1="43" x2="52.5" y2="17" stroke="url(#gold)" stroke-width="2.5"/>
-                                <line x1="7.5" y1="17" x2="52.5" y2="43" stroke="url(#gold)" stroke-width="2.5"/>
+                                
+                                <!-- Spokes updated to solid #fbc02d to prevent the 0-width vertical line from disappearing -->
+                                <line x1="30" y1="4" x2="30" y2="56" stroke="#fbc02d" stroke-width="2.5"/>
+                                <line x1="7.5" y1="43" x2="52.5" y2="17" stroke="#fbc02d" stroke-width="2.5"/>
+                                <line x1="7.5" y1="17" x2="52.5" y2="43" stroke="#fbc02d" stroke-width="2.5"/>
                                 
                                 <use href="#weight-screw" transform="rotate(0 30 30)"/>
                                 <use href="#weight-screw" transform="rotate(30 30 30)"/>
@@ -414,7 +416,7 @@
                                 <circle cx="30" cy="30" r="10" fill="#eceff1" stroke="#90a4ae" stroke-width="0.5"/>
                                 <circle cx="30" cy="30" r="4" fill="#cfd8dc"/>
                                 
-                                <!-- Ruby Impulse Pin (moved to the inner roller) -->
+                                <!-- Ruby Impulse Pin -->
                                 <circle cx="30" cy="20" r="1.5" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
 
                                 <!-- Central Shock Setting (Incabloc) -->
@@ -441,7 +443,6 @@
                                 <polygon points="11.5,12 15,9.5 16.5,13 13,16" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
                                 <polygon points="38.5,12 35,9.5 33.5,13 37,16" fill="#e91e63" stroke="#880e4f" stroke-width="0.5"/>
                                 
-                                <!-- Note the open notch at the bottom (L 25 45) where the inner pin engages -->
                                 <path d="M 23 18 C 23 15, 27 15, 27 18 L 34 13 L 36 16 C 31 19, 28 22, 28 25 L 28 42 L 32 47 L 30 49 L 25 45 L 20 49 L 18 47 L 22 42 L 22 25 C 22 22, 19 19, 14 16 L 16 13 Z" fill="url(#pf-metal)" stroke="#78909c" stroke-width="0.5"/>
                                 
                                 <circle cx="25" cy="20" r="3.5" fill="#cfd8dc" stroke="#546e7a" stroke-width="0.5"/>
@@ -565,7 +566,7 @@
             const palletAngle = isEvenTick ? -10 : 10;
             palletFork.style.transform = `rotate(${palletAngle}deg)`;
 
-            const escapeAngle = Math.floor(continuousTicks) * 12 + 6;
+            const escapeAngle = Math.floor(continuousTicks) * 12 + 7;
             escapeWheel.style.transform = `rotate(${escapeAngle}deg)`;
             
             requestAnimationFrame(drawClock);
